@@ -48,7 +48,9 @@ def telemetry(sid, data):
     # This model currently assumes that the features of the model are just the images. Feel free to change this.
     steering_angle = float(model.predict(rsz_img, batch_size=1))
     # The driving model currently just outputs a constant throttle. Feel free to edit this.
-    throttle = 0.2
+
+    throttle = 0.2 # set 0.27 for the mountain track
+
     print(steering_angle, throttle)
     # print(time.time(), steering_angle, throttle)
     # time.sleep(16.e-2/23)
