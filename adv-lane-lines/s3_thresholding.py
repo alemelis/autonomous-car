@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import seaborn as sns
-import glob
-from s1_calibration import undistortImage, preprocessImage
 from s2_perspective_transform import warpImage
 
 # load calibration variables
@@ -15,7 +13,6 @@ def loadCalibrationVariables():
     offs = np.loadtxt("data/offset.dat")
 
     return mtx, dist, M, offs
-mtx, dist, M, offset = loadCalibrationVariables()
 
 def colorThresholding(img_name, thresholds=(60, 255)):
     mtx, dist, M, offset = loadCalibrationVariables()
@@ -40,7 +37,7 @@ def gradThresholding(img_name, thresholds=(20, 100)):
     sobel_x_abs = np.absolute(sobel_x)
 
     # scale the absolute values
-    scaled = np.uint8(255*scaled/np.max(scaled))
+    scaled = np.uint8(255*sobel_x_abs/np.max(sobel_x_abs))
 
     # apply thresholding
     sobel_bin = np.zeros_like(scaled)
@@ -57,152 +54,153 @@ def mixThresholding(img_name, color_ths=(60, 255), sobel_ths=(20,100)):
 
     return mix_bin
 
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# COLOR THRESHOLDING
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-mtx, dist, M, offset = loadCalibrationVariables()
+if __name__ == "__main__":
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # COLOR THRESHOLDING
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    mtx, dist, M, offset = loadCalibrationVariables()
 
-# load, extract S channel, and warp example image
-img_name = "test_images/test2.jpg"
-img_warp = warpImage(img_name, mtx, dist, M, hls=1)
+    # load, extract S channel, and warp example image
+    img_name = "test_images/test2.jpg"
+    img_warp = warpImage(img_name, mtx, dist, M, hls=1)
 
-# initialise binary image
-img_bin = np.zeros_like(img_warp)
+    # initialise binary image
+    img_bin = np.zeros_like(img_warp)
 
-# select thresolds
-S_thresholds = (60, 255)
-img_bin[(img_warp >= S_thresholds[0]) & (img_warp <= S_thresholds[1])] = 1
+    # select thresolds
+    S_thresholds = (60, 255)
+    img_bin[(img_warp >= S_thresholds[0]) & (img_warp <= S_thresholds[1])] = 1
 
-# plot images
-sns.set_style("white")
-fig = plt.figure(1, figsize=(9,3))
-fig.clf()
-ax1 = fig.add_subplot(121)
-ax1.imshow(img_warp, cmap='gray')
-ax1.set_xlabel("$x$")
-ax1.set_ylabel("$y$")
-ax1.set_xlim(0, img_warp.shape[1])
-ax1.set_ylim(img_warp.shape[0],0)
-ax1.set_title("Warped S channel")
+    # plot images
+    sns.set_style("white")
+    fig = plt.figure(1, figsize=(9,3))
+    fig.clf()
+    ax1 = fig.add_subplot(121)
+    ax1.imshow(img_warp, cmap='gray')
+    ax1.set_xlabel("$x$")
+    ax1.set_ylabel("$y$")
+    ax1.set_xlim(0, img_warp.shape[1])
+    ax1.set_ylim(img_warp.shape[0],0)
+    ax1.set_title("Warped S channel")
 
-ax2 = fig.add_subplot(122)
-ax2.imshow(img_bin, cmap='gray')
-iw = img_warp.shape[1]
-ih = img_warp.shape[0]
-ax2.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax2.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax2.set_xlabel("$x$")
-ax2.set_title("S channel thesholding")
-plt.setp(ax2.get_yticklabels(), visible=0)
-ax2.set_xlim(0, img_bin.shape[1])
-ax2.set_ylim(img_bin.shape[0],0)
+    ax2 = fig.add_subplot(122)
+    ax2.imshow(img_bin, cmap='gray')
+    iw = img_warp.shape[1]
+    ih = img_warp.shape[0]
+    ax2.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax2.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax2.set_xlabel("$x$")
+    ax2.set_title("S channel thesholding")
+    plt.setp(ax2.get_yticklabels(), visible=0)
+    ax2.set_xlim(0, img_bin.shape[1])
+    ax2.set_ylim(img_bin.shape[0],0)
 
-plt.tight_layout()
-plt.show()
-plt.savefig("output_images/fig4.png")
+    plt.tight_layout()
+    plt.show()
+    plt.savefig("output_images/fig4.png")
 
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# GRADIENT THRESHOLDING
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # GRADIENT THRESHOLDING
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-# load, convert to grayscale, and warp example image
-gray_warp = warpImage(img_name, mtx, dist, M)
+    # load, convert to grayscale, and warp example image
+    gray_warp = warpImage(img_name, mtx, dist, M)
 
-# compute x-wise gradient and take the absolute value
-gray_Sx = cv2.Sobel(gray_warp, cv2.CV_64F, 1, 0)
-gray_Sx_abs = np.absolute(gray_Sx)
+    # compute x-wise gradient and take the absolute value
+    gray_Sx = cv2.Sobel(gray_warp, cv2.CV_64F, 1, 0)
+    gray_Sx_abs = np.absolute(gray_Sx)
 
-# scale the absolute values
-scaled_Sx_abs = np.uint8(255*gray_Sx_abs/np.max(gray_Sx_abs))
+    # scale the absolute values
+    scaled_Sx_abs = np.uint8(255*gray_Sx_abs/np.max(gray_Sx_abs))
 
-# apply thresholding
-Sx_th_min = 20
-Sx_th_max = 100
-Sx_bin = np.zeros_like(scaled_Sx_abs)
-Sx_bin[(scaled_Sx_abs >= Sx_th_min) & (scaled_Sx_abs <= Sx_th_max)] = 1
+    # apply thresholding
+    Sx_th_min = 20
+    Sx_th_max = 100
+    Sx_bin = np.zeros_like(scaled_Sx_abs)
+    Sx_bin[(scaled_Sx_abs >= Sx_th_min) & (scaled_Sx_abs <= Sx_th_max)] = 1
 
-# plot images
-sns.set_style("white")
-fig = plt.figure(2, figsize=(9,3))
-fig.clf()
-ax1 = fig.add_subplot(121)
-ax1.imshow(gray_warp, cmap='gray')
-ax1.set_xlabel("$x$")
-ax1.set_ylabel("$y$")
-ax1.set_xlim(0, gray_warp.shape[1])
-ax1.set_ylim(gray_warp.shape[0],0)
-ax1.set_title("Warped grayscale images")
+    # plot images
+    sns.set_style("white")
+    fig = plt.figure(2, figsize=(9,3))
+    fig.clf()
+    ax1 = fig.add_subplot(121)
+    ax1.imshow(gray_warp, cmap='gray')
+    ax1.set_xlabel("$x$")
+    ax1.set_ylabel("$y$")
+    ax1.set_xlim(0, gray_warp.shape[1])
+    ax1.set_ylim(gray_warp.shape[0],0)
+    ax1.set_title("Warped grayscale images")
 
-ax2 = fig.add_subplot(122)
-ax2.imshow(Sx_bin, cmap='gray')
-iw = gray_warp.shape[1]
-ih = gray_warp.shape[0]
-ax2.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax2.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax2.set_xlabel("$x$")
-ax2.set_title("Sobel x thesholding")
-plt.setp(ax2.get_yticklabels(), visible=0)
-ax2.set_xlim(0, Sx_bin.shape[1])
-ax2.set_ylim(Sx_bin.shape[0],0)
+    ax2 = fig.add_subplot(122)
+    ax2.imshow(Sx_bin, cmap='gray')
+    iw = gray_warp.shape[1]
+    ih = gray_warp.shape[0]
+    ax2.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax2.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax2.set_xlabel("$x$")
+    ax2.set_title("Sobel x thesholding")
+    plt.setp(ax2.get_yticklabels(), visible=0)
+    ax2.set_xlim(0, Sx_bin.shape[1])
+    ax2.set_ylim(Sx_bin.shape[0],0)
 
-plt.tight_layout()
-plt.show()
-plt.savefig("output_images/fig5.png")
+    plt.tight_layout()
+    plt.show()
+    plt.savefig("output_images/fig5.png")
 
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# COMBINE THRESHOLDING
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-mix_bin = np.zeros_like(gray_warp)
-mix_bin[(img_bin == 1) | (Sx_bin == 1)] = 1
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # COMBINE THRESHOLDING
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    mix_bin = np.zeros_like(gray_warp)
+    mix_bin[(img_bin == 1) | (Sx_bin == 1)] = 1
 
-# plot images
-sns.set_style("white")
-fig = plt.figure(3, figsize=(9,6))
-fig.clf()
-ax1 = fig.add_subplot(221)
-ax1.imshow(gray_warp, cmap='gray')
-ax1.set_ylabel("$y$")
-plt.setp(ax1.get_xticklabels(), visible=0)
-ax1.set_xlim(0, gray_warp.shape[1])
-ax1.set_ylim(gray_warp.shape[0],0)
-ax1.set_title("Warped grayscale images")
+    # plot images
+    sns.set_style("white")
+    fig = plt.figure(3, figsize=(9,6))
+    fig.clf()
+    ax1 = fig.add_subplot(221)
+    ax1.imshow(gray_warp, cmap='gray')
+    ax1.set_ylabel("$y$")
+    plt.setp(ax1.get_xticklabels(), visible=0)
+    ax1.set_xlim(0, gray_warp.shape[1])
+    ax1.set_ylim(gray_warp.shape[0],0)
+    ax1.set_title("Warped grayscale images")
 
-ax2 = fig.add_subplot(222)
-ax2.imshow(Sx_bin, cmap='gray')
-iw = gray_warp.shape[1]
-ih = gray_warp.shape[0]
-ax2.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax2.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax2.set_title("Sobel x thesholding")
-plt.setp(ax2.get_yticklabels(), visible=0)
-plt.setp(ax2.get_xticklabels(), visible=0)
-ax2.set_xlim(0, Sx_bin.shape[1])
-ax2.set_ylim(Sx_bin.shape[0],0)
+    ax2 = fig.add_subplot(222)
+    ax2.imshow(Sx_bin, cmap='gray')
+    iw = gray_warp.shape[1]
+    ih = gray_warp.shape[0]
+    ax2.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax2.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax2.set_title("Sobel x thesholding")
+    plt.setp(ax2.get_yticklabels(), visible=0)
+    plt.setp(ax2.get_xticklabels(), visible=0)
+    ax2.set_xlim(0, Sx_bin.shape[1])
+    ax2.set_ylim(Sx_bin.shape[0],0)
 
-ax3 = fig.add_subplot(223)
-ax3.imshow(img_bin, cmap='gray')
-iw = img_warp.shape[1]
-ih = img_warp.shape[0]
-ax3.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax3.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax3.set_xlabel("$x$")
-ax3.set_ylabel("$y$")
-ax3.set_title("S channel thesholding")
-ax3.set_xlim(0, img_bin.shape[1])
-ax3.set_ylim(img_bin.shape[0],0)
+    ax3 = fig.add_subplot(223)
+    ax3.imshow(img_bin, cmap='gray')
+    iw = img_warp.shape[1]
+    ih = img_warp.shape[0]
+    ax3.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax3.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax3.set_xlabel("$x$")
+    ax3.set_ylabel("$y$")
+    ax3.set_title("S channel thesholding")
+    ax3.set_xlim(0, img_bin.shape[1])
+    ax3.set_ylim(img_bin.shape[0],0)
 
-ax4 = fig.add_subplot(224)
-ax4.imshow(mix_bin, cmap='gray')
-iw = gray_warp.shape[1]
-ih = gray_warp.shape[0]
-ax4.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax4.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
-ax4.set_title("Combined thesholding")
-ax4.set_xlabel("$x$")
-plt.setp(ax4.get_yticklabels(), visible=0)
-ax4.set_xlim(0, mix_bin.shape[1])
-ax4.set_ylim(mix_bin.shape[0],0)
+    ax4 = fig.add_subplot(224)
+    ax4.imshow(mix_bin, cmap='gray')
+    iw = gray_warp.shape[1]
+    ih = gray_warp.shape[0]
+    ax4.vlines(offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax4.vlines(iw-offset, 0, iw+50, linestyles='--', color="crimson", lw=3)
+    ax4.set_title("Combined thesholding")
+    ax4.set_xlabel("$x$")
+    plt.setp(ax4.get_yticklabels(), visible=0)
+    ax4.set_xlim(0, mix_bin.shape[1])
+    ax4.set_ylim(mix_bin.shape[0],0)
 
-plt.tight_layout()
-plt.show()
-plt.savefig("output_images/fig6.png")
+    plt.tight_layout()
+    plt.show()
+    plt.savefig("output_images/fig6.png")
