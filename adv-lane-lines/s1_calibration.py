@@ -8,8 +8,12 @@ import glob
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 def preprocessImage(img_name, hls=0):
-    # read calibration image
-    img = mpimg.imread(img_name)
+
+    if type(img_name) == str:
+        # read calibration image
+        img = mpimg.imread(img_name)
+    else:
+        img = img_name
 
     # convert to grayscale or extract S channel
     if hls:
