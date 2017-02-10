@@ -26,6 +26,9 @@ The goals / steps of this project are the following:
 [image2-0]: ./output_images/fig2-0.png "Select source points"
 [image2]: ./output_images/fig2.png "Straight lines warped"
 [image3]: ./output_images/fig3.png "Curved lines warped"
+[image4]: ./output_images/fig4.png "Saturation channel thresholding"
+[image5]: ./output_images/fig5.png "x-wise gradient thresholding"
+[image6]: ./output_images/fig6.png "Combined thresholding"
 
 #### Camera Calibration
 
@@ -51,7 +54,6 @@ The code for my perspective transform is in `s2_perspective_transform.py`. It in
 * Compute the undistorted form of the image with functions from `s1_calibration.py` (L19:25).
 
 * Select by hand the source points `P1`, `P2`, `P3`, `P4` and store them in the array `src_pts`. This was done on pyplot interactive window (L 27:32)
-
 ![alt text][image2-0]
 
 * Define the destination points `dst_pts` in function of the image size (L 34:40).
@@ -60,15 +62,55 @@ The code for my perspective transform is in `s2_perspective_transform.py`. It in
 
 * Warp image to obtain the bird's-eye view
 
-_(left) Undistorted test image with straight lines. The source points are marked. (right) Warped image; the destination points are indicated by the dashed line. The lane lines are parallel to the dashed lines._
+  _(left) Undistorted test image with straight lines. The source points are marked. (right) Warped image; the destination points are indicated by the dashed line. The lane lines are parallel to the dashed lines._
 
-![alt text][image2]
+  ![alt text][image2]
 
 * Apply the pipeline to an image with curved lines
 
-_Original curved lines image and warped version. The lane lines are not parallel to the dashed lines in the bird's-eye view._
+  _Original curved lines image and warped version. The lane lines are not parallel to the dashed lines in the bird's-eye view._
 
-![alt text][image3]
+  ![alt text][image3]
+
+#### Thresholding
+
+Two thresholding methods were employed (see `s3_thresholding.py`):
+
+* __Color thresholding__
+  * The saturation channel was extracted from the RGB image. This was observed to be the most robust channel upon which perform the color thresholding.
+  * The S channel image was warped through `warpImage()` and thresholded by means of two values stored in the tuple `S_thresholds`. These values were selected by trial/error on the test image.
+  
+  ![alt text][image4]
+
+
+* __Gradient thresholding__
+  * Convert the image to grayscale and warp to fix the perspective.
+  * Compute x-wise gradient by means of `cv2.Sobel()`.
+  * Take the absolute values and scale the gradient image.
+  * Apply Sobel thresholds.
+
+  ![alt text][image5]
+
+The combined thresholding was obtained by operating the _union_ of the two binary images:
+```python
+mix_bin[(color_th == 1) | (sobel_th == 1)] = 1
+```
+
+_Combined thresholding pipeline. The resulting image is on the bottom right._
+
+![alt text][image6]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?

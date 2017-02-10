@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # destination points defined by means of offset value
     img_size = (undst_src.shape[1],undst_src.shape[0])
     offset = 350
-    np.savetxt("data/offset.dat", offset)
+    np.savetxt("data/offset.dat", offset) # save for next steps
     dst_pts = np.float32([[offset,             offset],
                           [img_size[0]-offset, offset],
                           [img_size[0]-offset, img_size[1]],
