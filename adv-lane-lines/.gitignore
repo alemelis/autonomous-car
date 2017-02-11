@@ -1,3 +1,7 @@
 example_writeup.pdf
 examples/*
 *.mp4
+videos/*
+imgs/*
+hls_and_color_transform.py
+*-old.py
