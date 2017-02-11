@@ -1,6 +1,6 @@
 example_writeup.pdf
 examples/*
-*.mp4
+*challenge*.mp4
 videos/*
 imgs/*
 hls_and_color_transform.py

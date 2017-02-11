@@ -139,7 +139,7 @@ The lane can be plotted back on the original image by means of the code provided
 
 ### Pipeline (video)
 
-Here's a [link to my video result](https://www.youtube.com/watch?v=NcVSKMoLsZY).
+Here's a [link to my video result](https://www.youtube.com/watch?v=NcVSKMoLsZY), which is attached also as `project_out.mp4`
 
 The video was processed with the functions in `s5_find_lane_on_video.py`. There, the main functions defined in the previous steps were reported.
 
