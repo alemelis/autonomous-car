@@ -25,6 +25,7 @@ The goals / steps of this project are the following:
 [image8]: ./output_images/fig8.png "Sliding windows method"
 [image9]: ./output_images/fig9.png "Lane found"
 [image10]: ./output_images/fig10.png "Challenge failed"
+[image11]: ./output_images/fig-R1.png "HSV thresholding"
 
 #### Camera Calibration
 
@@ -73,21 +74,21 @@ The code for my perspective transform is in `s2_perspective_transform.py`. It in
 Two thresholding methods were employed (see `s3_thresholding.py`):
 
 * __Color thresholding__
-  * The saturation channel was extracted from the RGB image. This was observed to be the most robust channel upon which perform the color thresholding (L 65).
-  * The S channel image was warped through `warpImage()` and thresholded by means of two values stored in the tuple `S_thresholds`. These values were selected by trial/error on the test image (L 72).
+  * The saturation channel was extracted from the RGB image. This was observed to be the most robust channel upon which perform the color thresholding (L 99).
+  * The S channel image was warped through `warpImage()` and thresholded by means of two values stored in the tuple `S_thresholds`. These values were selected by trial/error on the test image (L 105).
 
   ![alt text][image4]
 
 
 * __Gradient thresholding__
   * Convert the image to grayscale and warp to fix the perspective (L 107).
-  * Compute x-wise gradient by means of `cv2.Sobel()` (L 110:111).
-  * Take the absolute values and scale the gradient image (L 114).
-  * Apply Sobel thresholds (L 117:120).
+  * Compute x-wise gradient by means of `cv2.Sobel()` (L 144:145).
+  * Take the absolute values and scale the gradient image (L 148).
+  * Apply Sobel thresholds (L 150:154).
 
   ![alt text][image5]
 
-The combined thresholding was obtained by operating the _union_ of the two binary images (L 154):
+The combined thresholding was obtained by operating the _union_ of the two binary images (L 188):
 ```python
 mix_bin[(color_th == 1) | (sobel_th == 1)] = 1
 ```
@@ -95,6 +96,11 @@ mix_bin[(color_th == 1) | (sobel_th == 1)] = 1
 _Combined thresholding pipeline. The resulting image is on the bottom right._
 
 ![alt text][image6]
+
+__EDIT:__ After the first review, it was suggested to include HSV thresholding in the pipeline. A new function `trickyHSV()` (L) was defined (tricky because of the multiple channels involved).
+![alt text][image11]
+
+This new function better captures the dashed lines and improves the overall line detection pipeline.
 
 #### Lines detection
 Thi section code is in `s4_finding_lines.py`. Lines were detected by using the _sliding window_ method (L 83:189):
@@ -139,11 +145,11 @@ The lane can be plotted back on the original image by means of the code provided
 
 ### Pipeline (video)
 
-Here's a [link to my video result](https://www.youtube.com/watch?v=NcVSKMoLsZY), which is attached also as `project_out.mp4`
+Here's a [link to my updated video result](https://youtu.be/ikbKXZX4BuQ), which is attached also as `project_out.mp4`
 
 The video was processed with the functions in `s5_find_lane_on_video.py`. There, the main functions defined in the previous steps were reported.
 
-First, the sliding window method (`finInitialLanes()`) is used to identify the lines in the first video frame (L 219:243). The polynomial fits are then passed to `processFrame()` as global variables. In `processFrame()`, the lines are found by using the previous position as starting points for the pixel search (`findLines()`). If the newly found lines have similar curvature radius (these must differ for less than 50%), they are taken as good (L 163:199). In order to smooth the lines, the results to be plotted are averaged with the previous _15_ valid lines (L 201:209). The lane, curvature radii, and the center offset are plotted back on the frame (`drawPolygonOnRoad()`).
+First, the sliding window method (`finInitialLanes()`) is used to identify the lines in the first video frame (L 232:245). The polynomial fits are then passed to `processFrame()` as global variables. In `processFrame()`, the lines are found by using the previous position as starting points for the pixel search (`findLines()`). If the newly found lines have similar curvature radius (these must differ for less than 50%), they are taken as good (L 179:214). In order to smooth the lines, the results to be plotted are averaged with the previous _15_ valid lines (L 216:224). The lane, curvature radii, and the center offset are plotted back on the frame every _10_ frames (`drawPolygonOnRoad()`, L 121:141); curvature radii larger than _5_ km were discarded as outliers.
 
 ---
 

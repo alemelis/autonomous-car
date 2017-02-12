@@ -4,6 +4,7 @@ import matplotlib.image as mpimg
 from moviepy.editor import VideoFileClip
 from s2_perspective_transform import warpImage
 from s4_finding_lines import findInitialLanes
+from s3_thresholding import trickyHSV
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -47,9 +48,10 @@ def mixThresholding(img_name, mtx, dist, M,
         color_ths=(60, 255), sobel_ths=(20,100)):
     color_bin = colorThresholding(img_name, mtx, dist, M, color_ths)
     sobel_bin = gradThresholding(img_name, mtx, dist, M, sobel_ths)
+    hsv_bin   = trickyHSV(img_name)
 
     mix_bin = np.zeros_like(color_bin)
-    mix_bin[(color_bin == 1) | (sobel_bin == 1)] = 1
+    mix_bin[(color_bin == 1) | (sobel_bin == 1) | (hsv_bin == 1)] = 1
 
     return mix_bin
 
@@ -116,14 +118,27 @@ def drawPolygonOnRoad(img, th_img, x_fit_L, x_fit_R, w_half_width,
 
     # write information on screen
     # curvature radii
-    cv2.putText(img, "left radius: %5.2fm"%R_L[-1], (10,50),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
-    cv2.putText(img, "right radius: %5.2fm"%R_R[-1], (10,75),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+    global frames, old_text, x_m_p
+    if frames %10 ==0:
+        cv2.putText(img, "left radius: %5.2fm"%R_L[-1], (10,50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+        cv2.putText(img, "right radius: %5.2fm"%R_R[-1], (10,75),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
 
-    global x_m_p
-    cv2.putText(img, "offset: %5.2fm"%((center_offset-img.shape[1]*0.5)*x_m_p),
-                (10,100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+        cv2.putText(img, "offset: %5.2fm"%(
+                    (center_offset-img.shape[1]*0.5)*x_m_p),
+                    (10,100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+        old_text = (R_L[-1], R_R[-1], (center_offset-img.shape[1]*0.5)*x_m_p)
+        frames += 1
+    else:
+        cv2.putText(img, "left radius: %5.2fm"%old_text[0], (10,50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+        cv2.putText(img, "right radius: %5.2fm"%old_text[1], (10,75),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+
+        cv2.putText(img, "offset: %5.2fm"%old_text[2],
+                    (10,100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0))
+        frames += 1
 
     # Unwarp the image usign the inverse camera matrix
     global Minv
@@ -164,10 +179,10 @@ def processFrame(img, windows=10, w_half_width=100, min_pix=50):
     if len(p_Ls) <= 15:
         p_Ls.append(p_L_)
         p_Rs.append(p_R_)
-        if str(R_L_[-1]) != "nan":
+        if ((str(R_L_[-1]) != "nan") & (R_L_[-1] <= 5000)):
             R_L = R_L_
             R_Ls.append(R_L_)
-        if str(R_R_[-1]) != "nan":
+        if ((str(R_R_[-1]) != "nan") & (R_R_[-1] <= 5000)):
             R_R = R_R_
             R_Rs.append(R_R_)
     else:
@@ -179,10 +194,10 @@ def processFrame(img, windows=10, w_half_width=100, min_pix=50):
             p_R = p_R_
             x_fit_L = x_fit_L_
             x_fit_R = x_fit_R_
-            if str(R_L_[-1]) != "nan":
+            if ((str(R_L_[-1]) != "nan") & (R_L_[-1] <= 5000)):
                 R_L = R_L_
                 R_Ls.append(R_L_)
-            if str(R_R_[-1]) != "nan":
+            if ((str(R_R_[-1]) != "nan") & (R_R_[-1] <= 5000)):
                 R_R = R_R_
                 R_Rs.append(R_R_)
 
@@ -230,6 +245,7 @@ if __name__ == "__main__":
 
     # initial state
     # these are used as global variables in the functions above
+    frames = 0
     frame_width = frame.shape[1]
     ys = np.linspace(0, frame.shape[0]-1, frame.shape[0])
     ys_m = ys*y_m_p # convert to meter
@@ -239,6 +255,9 @@ if __name__ == "__main__":
     p_Rs = [p_R]
     R_Ls = []
     R_Rs = []
+    R_L_m = np.zeros((2))
+    R_R_m = np.zeros((2))
+    old_text = (0., 0., 0.)
 
     prj_clip = project_clip.fl_image(processFrame)
     prj_clip.write_videofile("project_out.mp4", audio=False)

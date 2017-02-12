@@ -51,7 +51,7 @@ if __name__ == "__main__":
     ax1.set_ylabel("$y$")
     plt.tight_layout()
     plt.show()
-    # fig.savefig("output_images/fig0.png")
+    fig.savefig("output_images/fig0.png")
 
     #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # CAMERA CALIBRATION
@@ -103,4 +103,4 @@ if __name__ == "__main__":
     ax1.set_ylabel("$y$")
     plt.tight_layout()
     plt.show()
-    # fig.savefig("output_images/fig1.png")
+    fig.savefig("output_images/fig1.png")

@@ -4,4 +4,5 @@ examples/*
 videos/*
 imgs/*
 hls_and_color_transform.py
-*-old.py
+*.zip
+../lane-lines/.ipynb_checkpoints/*

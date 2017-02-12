@@ -54,6 +54,40 @@ def mixThresholding(img_name, color_ths=(60, 255), sobel_ths=(20,100)):
 
     return mix_bin
 
+def trickyHSV(img_name):
+    mtx, dist, M, offset = loadCalibrationVariables()
+    # after the first review, the referee suggested this additional steps
+    if type(img_name) == str:
+        # read calibration image
+        img = mpimg.imread(img_name)
+    else:
+        img = img_name
+
+    und_img = cv2.undistort(img, mtx, dist)
+
+    img_size = (und_img.shape[1], und_img.shape[0])
+    warped = cv2.warpPerspective(und_img, M, img_size, flags=cv2.INTER_LINEAR)
+
+    HSV = cv2.cvtColor(warped, cv2.COLOR_RGB2HSV)
+
+    img_bin = np.zeros_like(HSV)[:,:,0]
+
+    # For yellow
+    yellow = cv2.inRange(HSV, (20, 100, 100), (50, 255, 255))
+
+    # For white
+    sensitivity_1 = 68
+    white = cv2.inRange(HSV, (0,0,255-sensitivity_1), (255,20,255))
+
+    sensitivity_2 = 60
+    HSL = cv2.cvtColor(warped, cv2.COLOR_RGB2HLS)
+    white_2 = cv2.inRange(HSL, (0,255-sensitivity_2,0), (255,255,sensitivity_2))
+    white_3 = cv2.inRange(warped, (200,200,200), (255,255,255))
+
+    bit_layer = img_bin | yellow | white | white_2 | white_3
+
+    return bit_layer-1
+
 if __name__ == "__main__":
     #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # COLOR THRESHOLDING
@@ -97,7 +131,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
-    plt.savefig("output_images/fig4.png")
+    # plt.savefig("output_images/fig4.png")
 
     #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # GRADIENT THRESHOLDING
@@ -145,7 +179,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
-    plt.savefig("output_images/fig5.png")
+    # plt.savefig("output_images/fig5.png")
 
     #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     # COMBINE THRESHOLDING
@@ -203,4 +237,20 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
-    plt.savefig("output_images/fig6.png")
+    # plt.savefig("output_images/fig6.png")
+
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    # COMBINE THRESHOLDING IN OTHER COLOR SPACES (suggested by a reviewer)
+    #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    b = trickyHSV(img_name)
+
+    fig = plt.figure(4, figsize=(5,3))
+    fig.clf()
+    ax1 = fig.add_subplot(111)
+    ax1.imshow(b)
+    ax1.set_title("Combined thesholding HSV")
+    ax1.set_xlabel("$x$")
+    ax1.set_ylabel("$y$")
+    plt.tight_layout()
+    plt.show()
+    plt.savefig("output_images/fig-R1.png")
