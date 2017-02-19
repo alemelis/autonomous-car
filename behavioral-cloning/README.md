@@ -100,6 +100,11 @@ rsz_img = cv2.resize(sky_img,(32,11)).reshape(1,11,32,1)
 ```
 The throttle is kept constant to `0.2`. However, in the view of driving in the mountain track, the throttle should be increased to `0.3`.
 
+To run the model, start the [simulator](https://github.com/udacity/self-driving-car-sim) in autonomous modes, and launch
+```bash
+$ python drive.py model.json
+```
+
 #### Autonomous driving
 
 [Video](https://youtu.be/VNUzwjJ_vEg) of the car autonomously driving on the track.
