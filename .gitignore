@@ -1,2 +1,6 @@
 */__pycache__/*
 */.ipynb_checkpoints/*
+vehicle-detection/vehicles/*
+vehicle-detection/non-vehicles/*
+vehicle-detection/writeup_template.md
+vehicle-detection/vd1_hog.py
