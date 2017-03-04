@@ -95,7 +95,7 @@ In the following picture, the detection pipeline was run over the test images. A
 
 ### Video implementation
 
-The processed video can be watched here.
+The processed video can be watched [here](https://youtu.be/wMrn5cGjVMg).
 
 All the windows containing a car (or part of it) were recorded within each video frame. These windows were used to create a heat map (`add_heat()`) that could be thresholded (`apply_threshold()`) to select only the locations were multiple windows were indicating (`scipy.ndimage.measurements.label()`).
 
@@ -105,8 +105,15 @@ Here is an example fram with all the windows found and the resulting heat map. B
 
 ![alt text][image5]
 
+__BONUS__ lane finding + vehicle tracking [video]().
+
 ---
 
 ### Discussion
 
-The main problem with this implementation is the whooping processing time of _2.23s/it_ (yes, seconds per iteration, not the other way around). This is mainly due to the large number (more than _300_) of windows to be searched in each frame. By neglecting the two denser layers the processing can be done at _1.7it/s_ (but with a huge increase in false positives). A major increase in performance should be achievable by exploiting GPUs and rewriting the pipeline to exploit multiple threads. Eventually, a deep learning approach can be employed (as already done by [others](https://github.com/ksakmann/CarND-Vehicle-Detection#comparsion-to-yolo)) while avoiding to explicitly define a computer vision pipeline.
+The pipeline is robust enough to track the vehicles along the entire video. Difficult frames are those when the car bump over the change in terrain and the car to be tracked is suddenly moved in a different part of the screen. This is handled well by the averaging and thresholding method that takes into account several frames.
+
+The main problem with this implementation is its "whooping" processing time of _2.23s/it_ (yes, seconds per iteration, not the other way around). This is mainly due to the large number (more than _300_) of windows to be searched in each frame. By neglecting the two denser layers the processing can be done at _1.7it/s_ (but with a huge increase in false positives). A major increase in performance should be achievable by exploiting GPUs and rewriting the pipeline to exploit multiple threads. Eventually, a deep learning approach can be employed (as already done by [others](https://github.com/ksakmann/CarND-Vehicle-Detection#comparsion-to-yolo)) while avoiding to explicitly define a computer vision pipeline.
+
+Additional features can include data harvesting from tracked vehicles, i.e. the calculation of relative speed, direction, and distance from our vehicle and the surrounding ones. The algorithm should also be able to distinguish between two cars, and to avoid to draw a single window when these are close.
+![img](http://i.giphy.com/3o7bu8INK4YRNK6s7e.gif)
