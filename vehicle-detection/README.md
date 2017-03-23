@@ -117,4 +117,5 @@ The main problem with this implementation is its "whooping" processing time of _
 
 Additional features can include data harvesting from tracked vehicles, i.e. the calculation of relative speed, direction, and distance from our vehicle and the surrounding ones. The algorithm should also be able to distinguish between two cars, and to avoid to draw a single window when these are close.
 
+
 ![img](http://i.giphy.com/3o7bu8INK4YRNK6s7e.gif)
