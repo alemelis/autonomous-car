@@ -7,6 +7,17 @@ Self-Driving Car Engineer Nanodegree Program
 
 * cmake >= 3.5
  * All OSes: [click here for installation instructions](https://cmake.org/install/)
+ * Ubuntu 14.04 upgrade to 3.5:
+    ```bash
+    sudo apt-get install build-essential
+    wget https://cmake.org/files/v3.5/cmake-3.5.0.tar.gz
+    tar xf cmake-3.5.0.tar.gz
+    cd cmake-3.5.0
+    ./configure
+    make
+    sudo apt-get install checkinstall
+    sudo checkinstall
+    ```
 * make >= 4.1
   * Linux: make is installed by default on most Linux distros
   * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
@@ -20,7 +31,7 @@ Self-Driving Car Engineer Nanodegree Program
 
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make` 
+3. Compile: `cmake .. && make`
    * On windows, you may need to run: `cmake .. -G "Unix Makefiles" && make`
 4. Run it: `./ExtendedKF path/to/input.txt path/to/output.txt`. You can find
    some sample inputs in 'data/'.
