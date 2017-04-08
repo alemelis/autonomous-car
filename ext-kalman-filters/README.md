@@ -21,6 +21,10 @@ Self-Driving Car Engineer Nanodegree Program
 * make >= 4.1
   * Linux: make is installed by default on most Linux distros
   * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
+  * Mac: update to 4.2.1
+  ```bash
+    brew install homebrew/dupes/make --with-default-names
+  ```
   * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
 * gcc/g++ >= 5.4
   * Linux: gcc / g++ is installed by default on most Linux distros
