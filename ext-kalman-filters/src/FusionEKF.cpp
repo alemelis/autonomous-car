@@ -64,6 +64,8 @@ void FusionEKF::InitialiseState(const MeasurementPackage &measurement_pack){
   */
 
   ekf_.x_ = VectorXd(4);
+  ekf_.x_ << 0, 0, 0, 0;
+
   ekf_.Q_ = MatrixXd(4, 4);
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
@@ -72,7 +74,10 @@ void FusionEKF::InitialiseState(const MeasurementPackage &measurement_pack){
     */
     double rho = measurement_pack.raw_measurements_[0];
     double phi = measurement_pack.raw_measurements_[1];
-    ekf_.x_ << rho*cos(phi), rho*sin(phi),0,0;
+    float range_rate = measurement_pack.raw_measurements_[2];
+
+    ekf_.x_ << rho*cos(phi), rho*sin(phi),
+                range_rate*cos(phi), range_rate*sin(phi);
   }
   else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
     ekf_.x_ << measurement_pack.raw_measurements_[0],
@@ -132,7 +137,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
  			        dt3*noise_ax, 0,            dt2*noise_ax, 0,
  			        0,            dt3*noise_ay, 0,            dt2*noise_ay;
 
-  ekf_.Predict();
+  if (dt > 0.001) {
+    ekf_.Predict();
+  }
 
   /*****************************************************************************
    *  Update
@@ -144,18 +151,18 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      * Update the state and covariance matrices.
    */
 
-  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-    // Radar updates
-    Hj_= tools.CalculateJacobian(ekf_.x_);
-    if (!Hj_.isZero()){
-	    ekf_.Init(ekf_.x_ , ekf_.P_ , ekf_.F_ , Hj_, R_radar_, ekf_.Q_ );
-    	ekf_.UpdateEKF(measurement_pack.raw_measurements_);
-    }
-  } else {
-    // Laser updates
-    ekf_.Init(ekf_.x_ , ekf_.P_ , ekf_.F_ , H_laser_, R_laser_, ekf_.Q_ );
-    ekf_.Update(measurement_pack.raw_measurements_);
-  }
+   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+     // Radar updates
+     Hj_ = tools.CalculateJacobian(ekf_.x_);
+     ekf_.R_ = R_radar_;
+     ekf_.H_ = Hj_;
+     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
+   } else {
+     // Laser updates
+     ekf_.R_ = R_laser_;
+     ekf_.H_ = H_laser_;
+     ekf_.Update(measurement_pack.raw_measurements_);
+   }
 
   // print the output
   // cout << "x_ = " << ekf_.x_ << endl;
