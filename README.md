@@ -22,4 +22,5 @@ and follow the instruction in each `README`.
   4. [Advanced lane lines finding](https://github.com/alemelis/autonomous-car/tree/master/adv-lane-lines) (computer vision)
   5. [Vehicle detection and tracking](https://github.com/alemelis/autonomous-car/tree/master/vehicle-detection) (computer vision and machine learning)
 * Second term:
-  1. TBD
+  1. [Extended Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/ext-kalman-filters)
+  2. [Unscented Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/unsc-kalman-filter)

@@ -377,8 +377,6 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
         meas_package.raw_measurements_[1],
         meas_package.raw_measurements_[2];
   VectorXd z_innov = z - z_pred;
-  //
-  // z_innov(1) = normalize_angle(z_innov(1));
 
   x_ = x_ + K * z_innov;
   P_ = P_ - K*S*K.transpose();
