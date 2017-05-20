@@ -141,9 +141,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 					min_dist_id = map_landmarks.landmark_list[l].id_i;
 				}
 			}
-
-			weight_update *= 0.5*exp(-0.5*(pow(t_obs[m].x-map_landmarks.landmark_list[min_dist_id].x_f,2)/(std_landmark[0]*std_landmark[0])+
-																		 pow(t_obs[m].y-map_landmarks.landmark_list[min_dist_id].y_f,2)/(std_landmark[1]*std_landmark[1])));
+			weight_update *= 0.5/(M_PI*std_landmark[0]*std_landmark[1])*exp(-0.5*(pow(t_obs[m].x-map_landmarks.landmark_list[min_dist_id].x_f,2)/(std_landmark[0]*std_landmark[0])+
+																		 																           pow(t_obs[m].y-map_landmarks.landmark_list[min_dist_id].y_f,2)/(std_landmark[1]*std_landmark[1])));
 		}
 		particles[i].weight = weight_update;
 	}
@@ -153,6 +152,37 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight.
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
+
+	double index, beta, mw;
+
+	std::default_random_engine generator;
+	std::uniform_int_distribution<int> RandomIndex(0, num_particles-1);
+	index = RandomIndex(generator);
+	beta = 0.;
+
+	// find max weight
+	mw = 0.;
+	for (int i; i<num_particles; i++) {
+		if (particles[i].weight > mw) {
+			mw = particles[i].weight;
+		}
+	}
+
+	// resampling wheel
+	std::normal_distribution<double> RandomBeta(0., 2*mw);
+	for (int i; i<num_particles; i++) {
+		beta += RandomBeta(generator);
+		while (beta > particles[index].weight) {
+			beta -= particles[index].weight;
+			if (index == num_particles-1) { // end of the world
+				index = 0;
+			}
+			else {
+				index ++;
+			}
+		}
+	}
+
 
 }
 
