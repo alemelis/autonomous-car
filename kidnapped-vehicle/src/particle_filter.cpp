@@ -110,6 +110,43 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   3.33. Note that you'll need to switch the minus sign in that equation to a plus to account
 	//   for the fact that the map's y-axis actually points downwards.)
 	//   http://planning.cs.uiuc.edu/node99.html
+
+	double weight_update;
+	std::vector<LandmarkObs> t_obs = std::vector<LandmarkObs>(observations.size());
+	for (int i=0; i<num_particles; i++) {
+		weight_update = 1.;
+
+		for (int m=0; m<observations.size(); m++) {
+
+			// transform observation to map coordinates
+			t_obs[m].x = 0.;
+			t_obs[m].x += observations[m].x * cos(particles[i].theta);
+			t_obs[m].x -= observations[m].y * sin(particles[i].theta);
+			t_obs[m].x += particles[i].x;
+
+			t_obs[m].y = 0.;
+			t_obs[m].y += observations[m].x * sin(particles[i].theta);
+			t_obs[m].y += observations[m].y * cos(particles[i].theta);
+			t_obs[m].y += particles[i].x;
+
+			// find closest landmark
+			double dist_from_landm;
+			double min_dist = 1.E15;
+			int min_dist_id = 0;
+			for (int l=0; l<map_landmarks.landmark_list.size(); l++) {
+				dist_from_landm = dist(t_obs[m].x, t_obs[m].y, map_landmarks.landmark_list[l].x_f, map_landmarks.landmark_list[l].y_f);
+
+				if (dist_from_landm < min_dist && dist_from_landm <= sensor_range) {
+					min_dist = dist_from_landm;
+					min_dist_id = map_landmarks.landmark_list[l].id_i;
+				}
+			}
+
+			weight_update *= 0.5*exp(-0.5*(pow(t_obs[m].x-map_landmarks.landmark_list[min_dist_id].x_f,2)/(std_landmark[0]*std_landmark[0])+
+																		 pow(t_obs[m].y-map_landmarks.landmark_list[min_dist_id].y_f,2)/(std_landmark[1]*std_landmark[1])));
+		}
+		particles[i].weight = weight_update;
+	}
 }
 
 void ParticleFilter::resample() {
