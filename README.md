@@ -21,6 +21,7 @@ and follow the instruction in each `README`.
   3. [Behavioral cloning](https://github.com/alemelis/autonomous-car/tree/master/behavioral-cloning) (deep learning)
   4. [Advanced lane lines finding](https://github.com/alemelis/autonomous-car/tree/master/adv-lane-lines) (computer vision)
   5. [Vehicle detection and tracking](https://github.com/alemelis/autonomous-car/tree/master/vehicle-detection) (computer vision and machine learning)
-* Second term:
-  1. [Extended Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/ext-kalman-filters)
-  2. [Unscented Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/unsc-kalman-filter)
+* Second term: sensor fusion, localisation, and control
+  1. [Extended Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/ext-kalman-filters) (sensor fusion)
+  2. [Unscented Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/unsc-kalman-filter) (sensor fusion)
+  3. [Kidnapped vehicle]() (localisation)
