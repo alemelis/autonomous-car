@@ -34,9 +34,20 @@ int main()
 
   PID pid;
   // TODO: Initialize the pid variable.
-  double Kp=0.135, Ki=0.0011, Kd=3.3;
-  double p_error=0., i_error=0., d_error=0.;
-  pid.Init(Kp, Ki, Kd, p_error, i_error, d_error);
+
+  // trial and error
+
+  // double Kp=1, Ki=1, Kd=1; // nope...motion sickness granted
+  // double Kp=1, Ki=0, Kd=0; // almost gets to the first turn
+  // double Kp=0.5, Ki=0, Kd=0; // nah...
+  // double Kp=0.5, Ki=0.1, Kd=1; // let's try to include all the terms...very wiggle
+  // double Kp=0.5, Ki=0.1, Kd=3; // steers too much
+  // double Kp=0.25, Ki=0.01, Kd=3; // now we are talking...could be better 
+  // double Kp=0.25, Ki=0.005, Kd=3; // it gets scared at the end of the bridge
+  // double Kp=0.25, Ki=0.0025, Kd=3; // almost smooth ride
+  double Kp=0.25, Ki=0.0025, Kd=10; // nice :)
+
+  pid.Init(Kp, Ki, Kd);
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -62,6 +73,7 @@ int main()
           */
           pid.UpdateError(cte);
           steer_value = pid.TotalError();
+          // pid.Twiddle();
           
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
