@@ -6,7 +6,7 @@ Self-Driving Car Engineer Nanodegree Program
 [//]: # (Image References)
 
 [image0]: ./imgs/p.png "proportional"
-[image1]: https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/giphy.gif "largeP"
+[image1]: https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/200w_d.gif "largeP"
 [image2]: https://media.giphy.com/media/xUPGcFx7WGJYUfqUTK/giphy.gif "smallP"
 [image3]: ./imgs/pi.png "pintegral"
 [image4]: https://media.giphy.com/media/xUPGcwWjUZ3dQerSN2/giphy.gif "pi"
@@ -29,7 +29,7 @@ This project aim was to code (in C++) a proportional integral derivative (PID) c
 
 where `tau_P` is a constant value that indicates how much the steering angle `alpha` should be increased/decreased any time the `CTE` is computed. A controller with only the P parameter easily overshoots the desired trajectory. A large P parameter value (`tau_P=1.`) makes the car heavily oscillate even on straight road parts
 
-![](https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/giphy.gif)
+![alt][image1]
 
 A smaller value (`tau_P=.1`) makes the car unstable later on when a bend occurs
 
