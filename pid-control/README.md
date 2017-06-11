@@ -3,91 +3,62 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
-## Video
-[Click here!](https://youtu.be/KujZrGhdTf4)
+[//]: # (Image References)
 
-## Dependencies
+[image0]: ./imgs/p.png "proportional"
+[image1]: https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/giphy.gif "largeP"
+[image2]: https://media.giphy.com/media/xUPGcFx7WGJYUfqUTK/giphy.gif "smallP"
+[image3]: ./imgs/pi.png "pintegral"
+[image4]: https://media.giphy.com/media/xUPGcwWjUZ3dQerSN2/giphy.gif "pi"
+[image5]: ./imgs/pid.png "piderivative"
+[image6]: https://media.giphy.com/media/3o7bu4fSvzxU75d6CI/giphy.gif "pid"
+[image7]: https://media.giphy.com/media/xUA7aXxRYAncqsbGYE/giphy.gif "pidbend"
+[image8]: https://media.giphy.com/media/3ohzdRHje12KtL7Co0/giphy.gif "pidlarge"
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Simulator. You can download these from the [project intro page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+## Installation
 
-## Basic Build Instructions
+Instructions can be found in the [original repo](https://github.com/udacity/CarND-PID-Control-Project).
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+## Reflection
 
-## Editor Settings
+This project aim was to code (in C++) a proportional integral derivative (PID) controller for driving along a simulated track. The controller is based on the continuous calculation of the error between the actual car position and the desired position, the cross-track error (CTE). The CTE is used to correct the car position based on three terms:
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+**P**: steer the car in proportion to CTE as
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+![alt][image0]
 
-## Code Style
+where `tau_P` is a constant value that indicates how much the steering angle `alpha` should be increased/decreased any time the `CTE` is computed. A controller with only the P parameter easily overshoots the desired trajectory. A large P parameter value (`tau_P=1.`) makes the car heavily oscillate even on straight road parts
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+![alt][image1]
 
-## Project Instructions and Rubric
+A smaller value (`tau_P=.1`) makes the car unstable later on when a bend occurs
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+![alt][image2]
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+**I**: the integral term is computed as the sum of all CTEs previously observed
 
-## Hints!
+![alt][image3]
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+Hence, the I term takes into account the magnitude and the history of the track error. When the error starts accumulating, the I term becomes predominating and increases the steering angle. Therefore the I term magnitude should be smaller than P term one. Even with `tau_I=.001`, the car is almost immediately out of control
 
-## Call for IDE Profiles Pull Requests
+![alt][image4]
 
-Help your fellow students!
+**D**: the derivative term takes into consideration two consecutive CTEs and, by considering a unit time step, computes the CTE time derivative as a the difference
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+![alt][image5]
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+The effect of the derivative term is to make the car gracefully approach the target trajectory. The magnitude of `tau_D` should be higher than the other two terms ones in order to damp the excessive oscillations and the accumulation of CTE. By setting `tau_D=3`, the car is more stable on the straight track and manages to approach the first bend without crossing the lane lines
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+![alt][image6]
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+However, in the curves, the error starts accumulating and the car excessively wobbles in the following part
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+![alt][image7]
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+A large D term (`tau_D=10`) effectively neglects small CTE and avoids wobbling in curves; the car successfully completes a lap of the circuit.
+
+![alt][image8]
+
+### Parameters selection
+
+The final values for each PID term (`tau_P=0.25, tau_I=0.0025, tau_D=10`) were found by trial and error by following my understanding of the algorithm. The approach I followed is similar to the one described in the above section. I then tried to fine tune the parameters to achieve a smoother driving in bends. A video of the final run can be found [here](https://youtu.be/KujZrGhdTf4)

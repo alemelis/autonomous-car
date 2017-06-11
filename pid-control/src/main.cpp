@@ -42,7 +42,7 @@ int main()
   // double Kp=0.5, Ki=0, Kd=0; // nah...
   // double Kp=0.5, Ki=0.1, Kd=1; // let's try to include all the terms...very wiggle
   // double Kp=0.5, Ki=0.1, Kd=3; // steers too much
-  // double Kp=0.25, Ki=0.01, Kd=3; // now we are talking...could be better 
+  // double Kp=0.25, Ki=0.01, Kd=3; // now we are talking...could be better
   // double Kp=0.25, Ki=0.005, Kd=3; // it gets scared at the end of the bridge
   // double Kp=0.25, Ki=0.0025, Kd=3; // almost smooth ride
   double Kp=0.25, Ki=0.0025, Kd=10; // nice :)
@@ -74,7 +74,7 @@ int main()
           pid.UpdateError(cte);
           steer_value = pid.TotalError();
           // pid.Twiddle();
-          
+
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
 
