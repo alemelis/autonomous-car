@@ -6,7 +6,7 @@ Self-Driving Car Engineer Nanodegree Program
 [//]: # (Image References)
 
 [image0]: ./imgs/p.png "proportional"
-[image1]: https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/200w_d.gif "largeP"
+[image1]: https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/giphy-downsized-large.gif "largeP"
 [image2]: https://media.giphy.com/media/xUPGcFx7WGJYUfqUTK/giphy.gif "smallP"
 [image3]: ./imgs/pi.png "pintegral"
 [image4]: https://media.giphy.com/media/xUPGcwWjUZ3dQerSN2/giphy.gif "pi"
