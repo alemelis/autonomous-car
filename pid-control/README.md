@@ -1,19 +1,17 @@
-# CarND-Controls-PID
-Self-Driving Car Engineer Nanodegree Program
+# PID controller
 
 ---
 
 [//]: # (Image References)
 
 [image0]: ./imgs/p.png "proportional"
-[image1]: https://media.giphy.com/media/3oKIPlhGaZJ5jhngkM/giphy-downsized-large.gif "largeP"
-[image2]: https://media.giphy.com/media/xUPGcFx7WGJYUfqUTK/giphy.gif "smallP"
+[image1]: ./imgs/gif1.gif "largeP"
+[image2]: ./imgs/gif2.gif "smallP"
 [image3]: ./imgs/pi.png "pintegral"
-[image4]: https://media.giphy.com/media/xUPGcwWjUZ3dQerSN2/giphy.gif "pi"
+[image4]: ./imgs/gif3.gif "pi"
 [image5]: ./imgs/pid.png "piderivative"
-[image6]: https://media.giphy.com/media/3o7bu4fSvzxU75d6CI/giphy.gif "pid"
-[image7]: https://media.giphy.com/media/xUA7aXxRYAncqsbGYE/giphy.gif "pidbend"
-[image8]: https://media.giphy.com/media/3ohzdRHje12KtL7Co0/giphy.gif "pidlarge"
+[image6]: ./imgs/gif4.gif "pid"
+[image7]: ./imgs/gif5.gif "pidbend"
 
 ## Installation
 
@@ -29,7 +27,6 @@ This project aim was to code (in C++) a proportional integral derivative (PID) c
 
 where `tau_P` is a constant value that indicates how much the steering angle `alpha` should be increased/decreased any time the `CTE` is computed. A controller with only the P parameter easily overshoots the desired trajectory. A large P parameter value (`tau_P=1.`) makes the car heavily oscillate even on straight road parts
 
-<div style="width:100%;height:0;padding-bottom:74%;position:relative;"><iframe src="https://giphy.com/embed/3oKIPlhGaZJ5jhngkM" width="100%" height="100%" style="position:absolute" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></div><p><a href="https://giphy.com/gifs/3oKIPlhGaZJ5jhngkM">via GIPHY</a></p>
 ![alt][image1]
 
 A smaller value (`tau_P=.1`) makes the car unstable later on when a bend occurs
@@ -52,14 +49,10 @@ The effect of the derivative term is to make the car gracefully approach the tar
 
 ![alt][image6]
 
-However, in the curves, the error starts accumulating and the car excessively wobbles in the following part
+The car even follows the bends in the most difficult tract of the circuit
 
 ![alt][image7]
 
-A large D term (`tau_D=10`) effectively neglects small CTE and avoids wobbling in curves; the car successfully completes a lap of the circuit.
-
-![alt][image8]
-
 ### Parameters selection
 
-The final values for each PID term (`tau_P=0.25, tau_I=0.0025, tau_D=10`) were found by trial and error by following my understanding of the algorithm. The approach I followed is similar to the one described in the above section. I then tried to fine tune the parameters to achieve a smoother driving in bends. A video of the final run can be found [here](https://youtu.be/KujZrGhdTf4)
+The final values for each PID term (`tau_P=0.25, tau_I=0.0025, tau_D=10`) were found by trial and error by following my understanding of the algorithm. The approach I followed is similar to the one described in the above section (the iterations are show as comments in `src/main.cpp`). I then tried to fine tune the parameters to achieve a smoother driving in bends. A video of the final run can be found [here](https://youtu.be/KujZrGhdTf4)

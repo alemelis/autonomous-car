@@ -25,3 +25,4 @@ and follow the instruction in each `README`.
   1. [Extended Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/ext-kalman-filters) (sensor fusion)
   2. [Unscented Kalman filter](https://github.com/alemelis/autonomous-car/tree/master/unsc-kalman-filter) (sensor fusion)
   3. [Kidnapped vehicle](https://github.com/alemelis/autonomous-car/tree/master/kidnapped-vehicle) (localisation)
+  4. [PID controller](https://github.com/alemelis/autonomous-car/tree/master/pid-control) (control)
