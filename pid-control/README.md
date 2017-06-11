@@ -29,6 +29,7 @@ This project aim was to code (in C++) a proportional integral derivative (PID) c
 
 where `tau_P` is a constant value that indicates how much the steering angle `alpha` should be increased/decreased any time the `CTE` is computed. A controller with only the P parameter easily overshoots the desired trajectory. A large P parameter value (`tau_P=1.`) makes the car heavily oscillate even on straight road parts
 
+<div style="width:100%;height:0;padding-bottom:74%;position:relative;"><iframe src="https://giphy.com/embed/3oKIPlhGaZJ5jhngkM" width="100%" height="100%" style="position:absolute" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></div><p><a href="https://giphy.com/gifs/3oKIPlhGaZJ5jhngkM">via GIPHY</a></p>
 ![alt][image1]
 
 A smaller value (`tau_P=.1`) makes the car unstable later on when a bend occurs
