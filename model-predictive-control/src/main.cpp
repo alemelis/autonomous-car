@@ -9,6 +9,8 @@
 #include "MPC.h"
 #include "json.hpp"
 
+const double Lf = 2.67;
+
 // for convenience
 using json = nlohmann::json;
 
@@ -91,6 +93,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double steer_value = j[1]["steering_angle"];
+          double throttle_value = j[1]["throttle"];
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -98,48 +102,43 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-
-          // !!!!!!!!!!!!!!!!!!
-          for (int i = 0; i < ptsx.size(); i++ )
-          {
-            //shift car reference angle to 90 degrees
-            double shift_x = ptsx[i]-px;
-            double shift_y = ptsy[i]-py;
-
-            ptsx[i] = (shift_x *cos(0-psi)-shift_y*sin(0-psi));
-            ptsy[i] = (shift_x *sin(0-psi)+shift_y*cos(0-psi));
+          
+          // Car space conversion
+          // From: https://discussions.udacity.com/t/not-able-to-display-trajectory-and-reference-paths-in-the-simulator/248545/7
+          // and https://discussions.udacity.com/t/mpc-car-space-conversion-and-output-of-solve-intuition/249469/12
+          double xn, yn;
+          Eigen::VectorXd ptsx_conv(ptsx.size());  // polyfit wants Eigen::VectorXd type arrays
+          Eigen::VectorXd ptsy_conv(ptsx.size());
+          for (int i = 0; i < ptsx.size(); i++ ) {
+            xn = ptsx[i] - px;
+            yn = ptsy[i] - py;
+            ptsx_conv[i] = xn*cos(psi) + yn*sin(psi);
+            ptsy_conv[i] = -xn*sin(psi) + yn*cos(psi);
           }
 
-          double* ptrx = &ptsx[0];
-          Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);
-
-          double* ptry = &ptsy[0];
-          Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
-
-          auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
-
-          //caculate cte and epsi
+          // Fit polynomial to points and calculate CTE and epsi
+          auto coeffs = polyfit(ptsx_conv, ptsy_conv, 3);
           double cte = polyeval(coeffs, 0);
           double epsi = -atan(coeffs[1]);
           
-          double steer_value = j[1]["steering_angle"];
-          double throttle_value = j[1]["throttle"];
-          
-          double delay_t = .1;
-          const double Lf = 2.67;
+          // Latency is taken into account by predicting the state via the vehicle motion model.
+          // N.B. This is done here in car coordinates, therefore y=0 always.
+          double latency = 100e-3;
+          double lat_x = v*latency;
+          double lat_y = 0;
+          double lat_psi = -v*steer_value / Lf * latency;
+          double lat_v = v + throttle_value*latency;
+          double lat_cte = cte + v*sin(epsi)*latency;
+          double lat_epsi = epsi + lat_psi;
 
-          //factor in delay
-          double delay_x = v*delay_t;
-          double delay_y = 0;
-          double delay_psi = -v*steer_value / Lf * delay_t;
-          double delay_v = v + throttle_value*delay_t;
-          double delay_cte = cte + v*sin(epsi)*delay_t;
-          double delay_epsi = epsi-v*steer_value /Lf * delay_t;
-
+          // Build state vector
           Eigen::VectorXd state(6);
-          state << delay_x, delay_y, delay_psi, delay_v, delay_cte, delay_epsi;
+          state << lat_x, lat_y, lat_psi, lat_v, lat_cte, lat_epsi;
 
+          // Solve with MPC
           auto results = mpc.Solve(state, coeffs);
+
+          // Retrieve results
           steer_value = results[0];
           throttle_value = results[1];
 
@@ -150,27 +149,18 @@ int main() {
           msgJson["throttle"] = throttle_value;
 
           // //Display the MPC predicted trajectory 
-          // int N = results[results.size()-1];
-          // vector<double> mpc_x_vals(N);
-          // vector<double> mpc_y_vals(N);
+          int N = results[results.size()-1];
+          vector<double> mpc_x_vals(N);
+          vector<double> mpc_y_vals(N);
 
-
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
-
-          for (int i = 2; i < results.size(); i++)
-          {
-              if(i%2 == 0)
-              {
-                mpc_x_vals.push_back(results[i]);
-              }
-              else
-              {
-                mpc_y_vals.push_back(results[i]);
-              }
+          int i = 0;
+          for (int t = 2; t<2*N+2; t++) {
+            mpc_x_vals[i] = results[t];
+            t ++;
+            mpc_y_vals[i] = results[t];
+            i ++;
           }
         
-
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
@@ -178,15 +168,14 @@ int main() {
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
+          // These are the (ptsx_conv, ptsy_conv) points in a vector<double> array type
+          int yellow_points = ptsx.size();
+          vector<double> next_x_vals(yellow_points);
+          vector<double> next_y_vals(yellow_points);
 
-          double poly_inc = 2.5;
-          int num_points = 25;
-          for (int i = 1; i < num_points; i++)
-          {
-              next_x_vals.push_back(poly_inc*i);
-              next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
+          for (int i=0; i<yellow_points; i++) {
+            next_x_vals[i] = ptsx_conv[i];
+            next_y_vals[i] = ptsy_conv[i];
           }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system

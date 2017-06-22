@@ -7,7 +7,7 @@ using CppAD::AD;
 
 // TODO: Set the timestep length and duration
 size_t N = 10;
-double dt = 0.1;
+double dt = .1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -22,7 +22,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // speed limit
-double ref_v = 40;
+double ref_v = 110;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -178,19 +178,16 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 1.0e19;
   }
 
-  // The upper and lower limits of delta are set to -25 and 25
-  // degrees (values in radians).
-  // NOTE: Feel free to change this to something else.
+  // The upper and lower limits of delta are set to -35 and 35 degrees (values in radians).
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    vars_lowerbound[i] = -0.523599;
+    vars_upperbound[i] = 0.523599;
   }
 
   // Acceleration/decceleration upper and lower limits.
-  // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-    vars_lowerbound[i] = -1.0;
-    vars_upperbound[i] = 1.0;
+    vars_lowerbound[i] = -1;
+    vars_upperbound[i] = 1;
   }
 
   // Lower and upper limits for the constraints
@@ -253,45 +250,25 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
 
   // TODO: Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
-  // vector<double> results(2*N+2+1);
 
-  // results[0] = solution.x[delta_start];
-  // results[1] = solution.x[a_start];
+  // Return actuator values and points of predicted trajectory in the results array
+  vector<double> results(2*N+2+1);
 
-  // int i = 1;
-  // for (int t = 2*N; t >2 ; t--) {
-  //   results[t] = solution.x[y_start + i];
-  //   t--;
-  //   results[t] = solution.x[x_start + i];
-  //   i++;
-  // }
+  // first two values are for steering angle and throttle value
+  results[0] = solution.x[delta_start];
+  results[1] = solution.x[a_start];
   
-
-  // int i = 1;
-  // for (int t = 2; t <= N+2; t++) {
-  //   results[t] = solution.x[x_start + t-2];
-  // }
-  // for (int t = N+3; t < 2*N; t++) {
-  //   results[t] = solution.x[y_start + t-N+3];
-  // }
-
-  // for (int t = 2; t < 2*N+2; t++) {
-  //   results[t] = solution.x[t-2+1];
-  // }
-  // results[2*N+2] = N;
-  // return results;
-
-  vector<double> result;
-
-  result.push_back(solution.x[delta_start]);
-  result.push_back(solution.x[a_start]);
-
-  for (int i = 0; i < N-1; i++)
-  {
-    result.push_back(solution.x[x_start + i + 1]);
-    result.push_back(solution.x[y_start + i + 1]);
+  // coordinates are stored as [x1, y1, x2, y2, ..., xN, yN]
+  int i = 2;
+  for (int t = 0; t<N; t++) {
+    results[i] = solution.x[x_start + t];
+    i ++;
+    results[i] = solution.x[y_start + t];
+    i ++;
   }
-  
 
-  return result;
+  // the last number is the time step length, that comes handy in the main.cpp
+  results[2*N+2] = N;
+  
+  return results;
 }
