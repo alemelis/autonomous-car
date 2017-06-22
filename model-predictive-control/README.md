@@ -2,17 +2,6 @@
 
 ---
 
-[//]: # (Image References)
-
-[image0]: ./imgs/img1.gif "N100dt01"
-[image1]: ./imgs/gif1.gif "largeP"
-[image2]: ./imgs/gif2.gif "smallP"
-[image3]: ./imgs/pi.png "pintegral"
-[image4]: ./imgs/gif3.gif "pi"
-[image5]: ./imgs/pid.png "piderivative"
-[image6]: ./imgs/gif4.gif "pid"
-[image7]: ./imgs/gif5.gif "pidbend"
-
 ## Installation
 
 Instructions can be found in the [original repo](https://github.com/udacity/CarND-MPC-Project).
@@ -54,11 +43,11 @@ The `results` vector contains the optimised actuation values and the predicted t
 ### N & dt
 At first, `N=100` and `dt=0.1` were set so that the algorithm would predict 1000s into the future. This approach did not work because the polynomial fitting became difficult, resulting in the car being confuse and not able to stay on the road
 
-![alt](image0)
+![alt](./imgs/img1.gif)
 
 The duration was reduced to `N=10` and the time step increased to `dt=1`. This allowed the car to be on track and to finish a lap. However, the car seemed to be very cautious in using the throttle, resulting in a hiccup motion
 
-![alt](image1)
+![alt](./imgs/img2.gif)
 
 By further decreasing the duration to `N=1` and the time step to `dt=.1`, the car was able to predict 10 steps in the future. This is enough to drive along the track with a nice pace.
 
