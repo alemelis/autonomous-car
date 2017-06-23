@@ -15,7 +15,16 @@ At each iteration, the car state is given in global map coordinates. The state i
 
 Then, `cte` and `epsi` are calculated from the __polynomial fit__ted on the points (`main.cpp:119`). 
 
-The system __latency__ of 100ms is taken into account by extrapolating the state by means of the vehicle motion model equations (`main.cpp:126`)
+Actuator values are returned by `MPC::Solve` function defined in `MPC.cpp`. This function is mostly taken from [quizzes solution](https://github.com/udacity/CarND-MPC-Quizzes). 
+
+The cost function has been tweaked to weight more `cte` and `epsi`. This was done by multiplying by 1000 the relative cost part (`MCP.cpp:59`)
+
+The upper and lower limits of the steering angle were change to +/- 35 degrees as explained in the lecture (`MCP.cpp:183`).
+
+The `results` vector contains the optimised actuation values and the predicted trajectory (`MCP.cpp:254`).
+
+### Latency
+The system __latency__ of 100ms is taken into account by extrapolating the state by means of the vehicle motion model kinematic equations (`main.cpp:126`)
 
 ```
 // Latency is taken into account by predicting the 
@@ -31,14 +40,6 @@ double lat_v = v + throttle_value*latency;
 double lat_cte = cte + v*sin(epsi)*latency;
 double lat_epsi = epsi + lat_psi;
 ```
-
-Actuator values are returned by `MPC::Solve` function defined in `MPC.cpp`. This function is mostly taken from [quizzes solution](https://github.com/udacity/CarND-MPC-Quizzes). 
-
-The cost function has been tweaked to weight more `cte` and `epsi`. This was done by multiplying by 1000 the relative cost part (`MCP.cpp:59`)
-
-The upper and lower limits of the steering angle were change to +/- 35 degrees as explained in the lecture (`MCP.cpp:183`).
-
-The `results` vector contains the optimised actuation values and the predicted trajectory (`MCP.cpp:254`).
 
 ### N & dt
 At first, `N=100` and `dt=0.1` were set so that the algorithm would predict 1000s into the future. This approach did not work because the polynomial fitting became difficult, resulting in the car being confuse and not able to stay on the road
