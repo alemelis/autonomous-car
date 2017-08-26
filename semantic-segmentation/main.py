@@ -46,17 +46,38 @@ def load_vgg(sess, vgg_path):
             vgg_layer4_out_tensor, vgg_layer7_out_tensor)
 tests.test_load_vgg(load_vgg, tf)
 
+
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
-    :param vgg_layer7_out: TF Tensor for VGG Layer 3 output
+    :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
     :param vgg_layer4_out: TF Tensor for VGG Layer 4 output
-    :param vgg_layer3_out: TF Tensor for VGG Layer 7 output
+    :param vgg_layer7_out: TF Tensor for VGG Layer 7 output
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    return None
+
+    # Complete encoder with a 1x1 convolution
+    num_outputs = 512
+    k_size = 1
+    stride = (1, 1)
+    one_by_one = tf.layers.conv2d(vgg_layer7_out, num_outputs, k_size, stride)
+
+    # Decoder: transposed convolution - https://arxiv.org/pdf/1505.04366.pdf
+    k_size = 7
+    t_conv1 = tf.layers.conv2d_transpose(one_by_one, num_outputs, k_size, stride)
+    skip1 = tf.add(t_conv1, vgg_layer4_out)
+
+    k_size = 3
+    num_outputs = 256
+    t_conv2 = tf.layers.conv2d_transpose(skip1, num_outputs, k_size, stride)
+    skip2 = tf.add(t_conv2, vgg_layer3_out)
+
+    num_outputs = num_classes
+    t_conv3 = tf.layers.conv2d_transpose(skip2, num_outputs, k_size, stride)
+
+    return t_conv3
 tests.test_layers(layers)
 
 
@@ -70,7 +91,13 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
     # TODO: Implement function
-    return None, None, None
+    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    labels = tf.reshape(correct_label, (-1, num_classes))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits))
+    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+    train_op = optimizer.minimize(cross_entropy_loss)
+
+    return (logits, train_op, cross_entropy_loss)
 tests.test_optimize(optimize)
 
 
@@ -118,6 +145,16 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
+        (vgg_input_tensor, vgg_keep_prob_tensor, vgg_layer3_out_tensor,
+                vgg_layer4_out_tensor, vgg_layer7_out_tensor) = load_vgg(sess,
+                                                                       vgg_path)
+
+        nn_last_layer = layers(vgg_layer3_out_tensor, vgg_layer4_out_tensor,
+                         vgg_layer7_out_tensor, num_classes)
+
+        learning_rate = 1e-3
+        correct_label = tf.placeholder(tf.float32, shape = [None, image_shape[0], image_shape[1], num_classes])
+        optimize(nn_last_layer, correct_label, learning_rate, num_classes)
 
         # TODO: Train NN using the train_nn function
 
