@@ -18,3 +18,14 @@ Run the following command to run the project:
 ```bash
 $ python main.py
 ```
+### Training
+
+The FCN was trained with the mini-batch strategy along 30 epochs. Each batch was made of 5 randomly picked images; the learning rate was set to 1e-4. The cross entropy loss decreases over time (loss time series is reported in `loss_std_out.dat`).
+
+![img](loss.png)
+
+### Test
+
+The network correctly classify most of the road pixels in the test dataset.
+
+![img](runs/1503840186.6613178/um_000065,png)
