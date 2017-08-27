@@ -28,4 +28,6 @@ and follow the instruction in each `README`.
   4. [PID controller](https://github.com/alemelis/autonomous-car/tree/master/pid-control) (control)
   5. [Model Predictive Control](https://github.com/alemelis/autonomous-car/tree/master/model-predictive-control) (control)
 * Third term: path planning, concentration, and systems
-  1. YTBD
+  1. Path planning (localisation and control)
+  2. [Semantic segmentation]() (deep learning)
+  3. System integration

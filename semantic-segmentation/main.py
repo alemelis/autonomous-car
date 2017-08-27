@@ -65,15 +65,17 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     one_by_one = tf.layers.conv2d(vgg_layer7_out, num_outputs, k_size, stride)
 
     # Decoder: transposed convolution - https://arxiv.org/pdf/1505.04366.pdf
-    k_size = 7
+    k_size = 2
+    stride = (2, 2)
     t_conv1 = tf.layers.conv2d_transpose(one_by_one, num_outputs, k_size, stride)
     skip1 = tf.add(t_conv1, vgg_layer4_out)
 
-    k_size = 3
     num_outputs = 256
     t_conv2 = tf.layers.conv2d_transpose(skip1, num_outputs, k_size, stride)
     skip2 = tf.add(t_conv2, vgg_layer3_out)
 
+    k_size = 8
+    stride = (8, 8)
     num_outputs = num_classes
     t_conv3 = tf.layers.conv2d_transpose(skip2, num_outputs, k_size, stride)
 
@@ -117,7 +119,19 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
+    init_op = tf.global_variables_initializer()
+    sess.run(init_op)
+
+    for i in range(epochs):
+        print("Epoch: {}".format(i))
+        for x_train, y_train in get_batches_fn(batch_size):
+            _, loss = sess.run([train_op, cross_entropy_loss],
+                            feed_dict={input_image: x_train,
+                                       correct_label: y_train,
+                                       keep_prob: 1.0})
+            print("--- loss: {}".format(loss))
     pass
+get_batches_fn = helper.gen_batch_function('./data', (160, 576))
 tests.test_train_nn(train_nn)
 
 
@@ -153,13 +167,25 @@ def run():
                          vgg_layer7_out_tensor, num_classes)
 
         learning_rate = 1e-3
-        correct_label = tf.placeholder(tf.float32, shape = [None, image_shape[0], image_shape[1], num_classes])
-        optimize(nn_last_layer, correct_label, learning_rate, num_classes)
+        correct_label = tf.placeholder(tf.float32, shape = [None, image_shape[0],
+                                                            image_shape[1],
+                                                            num_classes])
+
+        logits, train_op, cross_entropy_loss = optimize(nn_last_layer,
+                                                        correct_label,
+                                                        learning_rate,
+                                                        num_classes)
 
         # TODO: Train NN using the train_nn function
+        epochs = 10
+        batch_size = 30
+        keep_prob = 1.
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op,
+                 cross_entropy_loss, vgg_input_tensor, correct_label,
+                 vgg_keep_prob_tensor, learning_rate)
 
         # TODO: Save inference data using helper.save_inference_samples
-        #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, vgg_keep_prob_tensor, vgg_input_tensor)
 
         # OPTIONAL: Apply the trained model to a video
 
