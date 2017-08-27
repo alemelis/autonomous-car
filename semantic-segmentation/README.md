@@ -22,7 +22,8 @@ $ python main.py
 
 The FCN was trained with the mini-batch strategy along 30 epochs. Each batch was made of 5 randomly picked images; the learning rate was set to 1e-4. The cross entropy loss decreases over time (loss time series is reported in `loss_std_out.dat`).
 
-![img](loss.png)
+<img src="loss.png" style="width: 400px;"/>
+<!-- ![img](loss.png =250px) -->
 
 ### Test
 
