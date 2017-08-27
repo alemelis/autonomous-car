@@ -28,4 +28,4 @@ The FCN was trained with the mini-batch strategy along 30 epochs. Each batch was
 
 The network correctly classify most of the road pixels in the test dataset.
 
-![img](runs/1503840186.6613178/um_000065,png)
+![img](runs/1503840186.6613178/uu_000070.png)
