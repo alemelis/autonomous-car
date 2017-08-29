@@ -21,7 +21,7 @@ int lane = 1;
 // target reference velocity in mph
 // initially, to avoid the cold start issue, this is set to 0
 // an acceleration of 5m/s^2 is applied within the sensor fusion code section
-double ref_vel = 0;
+double ref_vel = 50;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -287,9 +287,43 @@ int main() {
                 if (check_car_s > car_s && check_car_s - car_s < 30)
                 {
                   too_close = true; // change proximity flag
-                  if (lane>0)
+
+                  // lane = 0;
+                  float d1; // other car d, s, and velocity
+                  double vx1, vy1, check_speed1, check_car_s1;
+                  for (int j=0; j<sensor_fusion.size(); j++)
                   {
-                    lane = 0;
+                    d1 = sensor_fusion[j][6]; // retrieve d
+                    if (d1 < 2 + 4*(lane-1) + 2 && d1 > 2 + 4*(lane-1) -2 && lane>0) // another car in my lane
+                    {
+                      vx1 = sensor_fusion[j][3]; // retrieve velocity components
+                      vy1 = sensor_fusion[j][4];
+                      check_speed1 = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
+
+                      check_car_s1 = sensor_fusion[j][5]; // how far is this car?
+                      check_car_s1 += ((double)path_size*0.02*check_speed);
+
+                      // if the car is too close (less than 30 meters)
+                      if (-check_car_s1 + car_s > 60)
+                      {
+                        lane -= 1;
+                      }
+                    }
+                    else if (d1 < 2 + 4*(lane+1) + 2 && d1 > 2 + 4*(lane+1) -2 && lane<2)
+                    {
+                      vx1 = sensor_fusion[j][3]; // retrieve velocity components
+                      vy1 = sensor_fusion[j][4];
+                      check_speed1 = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
+
+                      check_car_s1 = sensor_fusion[j][5]; // how far is this car?
+                      check_car_s1 += ((double)path_size*0.02*check_speed);
+
+                      // if the car is too close (less than 30 meters)
+                      if (-check_car_s1 + car_s > 60)
+                      {
+                        lane += 1;
+                      }
+                    }
                   }
                 }
               }
