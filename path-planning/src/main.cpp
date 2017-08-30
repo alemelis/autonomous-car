@@ -406,6 +406,16 @@ int main() {
                 check_car_s = sensor_fusion[i][5]; // how far is this car?
                 check_car_s += ((double)path_size*0.02*check_speed);
 
+                // https://discussions.udacity.com/t/compute-s-speed-of-sensor-fusion-data/326620/2
+                // car_heading  = arctan(vy/vx)
+                // lane_heading = arctan((waypoint1_y - waypoint0_y) / (waypoint1_x - waypoint0_x))
+                // delta_theta = car_heading - lane_heading
+
+                // mag_v = sqrt(pow(vx,2) + pow(vy,2))
+
+                // v_s = mag_v * cos(delta_theta)
+                // v_d = mag_v * sin(delta_theta)
+
                 // if the car is too close (less than 30 meters)
                 if (check_car_s > car_s && check_car_s - car_s < 30)
                 {
@@ -552,7 +562,7 @@ int main() {
               next_y_vals.push_back(y_point);
             }
 
-            //
+            //---------------------------------------------------------------------
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
