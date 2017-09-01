@@ -183,7 +183,7 @@ bool check_lane(vector<vector<double> > sensor_fusion, int lane, double car_s, i
       check_car_s = sensor_fusion[i][5]; // how far is this car?
       check_car_s += ((double)path_size*0.02*check_speed);
 
-      if (abs(check_car_s - car_s) < 30)
+      if (abs(check_car_s - car_s) < 50)
       {
         return true;
       }
@@ -323,6 +323,7 @@ int main() {
                     bool right = check_lane(sensor_fusion, lane+1, car_s, path_size);
                     if (right == false)
                     {
+                      ref_vel += 0.224;
                       lane += 1;
                     }
                   }
@@ -332,10 +333,12 @@ int main() {
                     bool right = check_lane(sensor_fusion, lane+1, car_s, path_size);
                     if (left == false)
                     {
+                      ref_vel += 0.224;
                       lane -= 1;
                     }
                     else if (right == false)
                     {
+                      ref_vel += 0.224;
                       lane += 1;
                     }
                   }
@@ -344,6 +347,7 @@ int main() {
                     bool left = check_lane(sensor_fusion, lane-1, car_s, path_size);
                     if (left == false)
                     {
+                      ref_vel += 0.224;
                       lane -= 1;
                     }
                   }
@@ -363,6 +367,10 @@ int main() {
             else if (ref_vel<49.5)
             {
               ref_vel += 0.224;
+            }
+            else if (ref_vel>49.5)
+            {
+              ref_vel -= 0.224;
             }
 
             // USE SPLINE TO CREATE PATH
