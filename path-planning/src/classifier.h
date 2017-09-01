@@ -24,13 +24,10 @@ public:
  	*/
  	virtual ~GNB();
 
- 	void train(vector<vector<double> > data, vector<string> labels, vector<vector<double>>& mus_c, vector<vector<double>>& sigmas_c);
+ 	void train(vector<vector<double> > data, vector<string> labels, vector<vector<double> >& mus_c, vector<vector<double> >& sigmas_c);
 
-  	string predict(vector<double>, vector<vector<double>> mus_c, vector<vector<double>> sigmas_c);
+  string predict(vector<double>, vector<vector<double> > mus_c, vector<vector<double> > sigmas_c);
 
 };
 
 #endif
-
-
-

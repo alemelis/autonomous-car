@@ -9,7 +9,6 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
-#include "classifier.h"
 
 using namespace std;
 
@@ -24,114 +23,41 @@ int lane = 1;
 // an acceleration of 5m/s^2 is applied within the sensor fusion code section
 double ref_vel = 49.5;
 
-// initialise Gaussian Naive Bayes classifier
-GNB::~GNB() {}
-
-// classifier train and test functions
-void GNB::train(vector<vector<double>> data, vector<string> labels, vector<vector<double>>& mus_c, vector<vector<double>>& sigmas_c)
+vector<vector<double> > Load_State(string file_name)
 {
+    ifstream in_state_(file_name.c_str(), ifstream::in);
+    vector< vector<double >> state_out;
+    string line;
 
-  /*
-    Trains the classifier with N data points and labels.
+    while (getline(in_state_, line))
+    {
+        istringstream iss(line);
+    	vector<double> x_coord;
 
-    INPUTS
-    data - array of N observations
-      - Each observation is a tuple with 4 values: s, d, 
-        s_dot and d_dot.
-      - Example : [
-          [3.5, 0.1, 5.9, -0.02],
-          [8.0, -0.3, 3.0, 2.2],
-          ...
-        ]
-
-    labels - array of N labels
-      - Each label is one of "left", "keep", or "right".
-  */
-  
-  string current_label;
-  double mu_c, sigma_c;
-  int counter;
-  
-  // for each quantity
-  for (int j=0; j<data[1].size(); j++){
-      
-      // for each label
-      for (int l=0; l<possible_labels.size(); l++){
-          current_label = possible_labels[l];
-          
-          vector<double> values_c;
-          counter = 0;
-          mu_c = 0;
-          sigma_c = 0;
-          
-          // check each training entry and compute mean
-          for (int i=0; i<data.size(); i++){
-              if (current_label == labels[i]){
-                  values_c.push_back(data[i][j]);
-                  mu_c += data[i][j];
-                  counter += 1;
-              }
-          }
-          mu_c /= counter;
-          mus_c[l][j] = mu_c;
-          
-          // compute std
-          for (int k=0; k<values_c.size(); k++){
-              sigma_c += pow(values_c[k]-mu_c, 2);
-          }
-          sigma_c /= counter;
-          sigma_c = sqrt(sigma_c);
-          
-          sigmas_c[l][j] = sigma_c;
-      }
-  }
+    	string token;
+    	while( getline(iss,token,','))
+    	{
+    	    x_coord.push_back(stod(token));
+    	}
+    	state_out.push_back(x_coord);
+    }
+    return state_out;
 }
 
-string GNB::predict(vector<double> sample, vector<vector<double>> mus_c, vector<vector<double>> sigmas_c)
+vector<string> Load_Label(string file_name)
 {
-  /*
-    Once trained, this method is called and expected to return 
-    a predicted behavior for the given observation.
+    ifstream in_label_(file_name.c_str(), ifstream::in);
+    vector< string > label_out;
+    string line;
+    while (getline(in_label_, line))
+    {
+    	istringstream iss(line);
+    	string label;
+	    iss >> label;
 
-    INPUTS
-
-    observation - a 4 tuple with s, d, s_dot, d_dot.
-      - Example: [3.5, 0.1, 8.5, -0.2]
-
-    OUTPUT
-
-    A label representing the best guess of the classifier. Can
-    be one of "left", "keep" or "right".
-    """
-    # TODO - complete this
-  */
-  
-  double mu_c, sigma_c;
-  double p;
-  double max_p=0;
-  int idx = 0;
-  
-    // check each class
-    for (int i=0; i<possible_labels.size(); i++){
-        p = 1;
-        
-        // compute probability for each quantity
-        for (int j=0; j<sample.size(); j++){
-            mu_c = mus_c[i][j];
-            sigma_c = sigmas_c[i][j];
-            double sigma_c2 = pow(sigma_c, 2);
-            
-            p *= 1/sqrt(2*M_PI*sigma_c2)*exp(-0.5*pow(sample[j]-mu_c, 2)/sigma_c2);
-        }
-        
-        if (p > max_p){
-            max_p = p;
-            idx = i;
-        }
-    }    
-
-  return this->possible_labels[idx];
-
+	    label_out.push_back(label);
+    }
+    return label_out;
 }
 
 // For converting back and forth between radians and degrees.
@@ -279,18 +205,121 @@ vector<double> getXY(double s, double d, vector<double> maps_s, vector<double> m
 
 }
 
+void Train(vector<vector<double> > data, vector<string> labels, vector<vector<double> >& mus_c, vector<vector<double> >& sigmas_c)
+{
+
+	/*
+		Trains the classifier with N data points and labels.
+
+		INPUTS
+		data - array of N observations
+		  - Each observation is a tuple with 4 values: s, d,
+		    s_dot and d_dot.
+		  - Example : [
+			  	[3.5, 0.1, 5.9, -0.02],
+			  	[8.0, -0.3, 3.0, 2.2],
+			  	...
+		  	]
+
+		labels - array of N labels
+		  - Each label is one of "left", "keep", or "right".
+	*/
+
+	string current_label;
+	double mu_c, sigma_c;
+	int counter;
+  vector<string> possible_labels = {"left","keep","right"};
+	// for each quantity
+	for (int j=0; j<data[1].size(); j++){
+
+	    // for each label
+	    for (int l=0; l<possible_labels.size(); l++){
+	        current_label = possible_labels[l];
+
+	        vector<double> values_c;
+	        counter = 0;
+	        mu_c = 0;
+	        sigma_c = 0;
+
+	        // check each training entry and compute mean
+	        for (int i=0; i<data.size(); i++){
+	            if (current_label == labels[i]){
+	                values_c.push_back(data[i][j]);
+	                mu_c += data[i][j];
+	                counter += 1;
+	            }
+	        }
+	        mu_c /= counter;
+	        mus_c[l][j] = mu_c;
+
+	        // compute std
+	        for (int k=0; k<values_c.size(); k++){
+	            sigma_c += pow(values_c[k]-mu_c, 2);
+	        }
+	        sigma_c /= counter;
+	        sigma_c = sqrt(sigma_c);
+
+	        sigmas_c[l][j] = sigma_c;
+	    }
+	}
+}
+
+string Predict(vector<double> sample, vector<vector<double> > mus_c, vector<vector<double> > sigmas_c)
+{
+	/*
+		Once trained, this method is called and expected to return
+		a predicted behavior for the given observation.
+
+		INPUTS
+
+		observation - a 4 tuple with s, d, s_dot, d_dot.
+		  - Example: [3.5, 0.1, 8.5, -0.2]
+
+		OUTPUT
+
+		A label representing the best guess of the classifier. Can
+		be one of "left", "keep" or "right".
+		"""
+		# TODO - complete this
+	*/
+
+	double mu_c, sigma_c;
+	double p;
+	double max_p=0;
+	int idx = 0;
+  vector<string> possible_labels = {"left","keep","right"};
+
+    // check each class
+    for (int i=0; i<3; i++){
+        p = 1;
+
+        // compute probability for each quantity
+        for (int j=0; j<sample.size(); j++){
+            mu_c = mus_c[i][j];
+            sigma_c = sigmas_c[i][j];
+            double sigma_c2 = pow(sigma_c, 2);
+
+            p *= 1/sqrt(2*M_PI*sigma_c2)*exp(-0.5*pow(sample[j]-mu_c, 2)/sigma_c2);
+        }
+
+        if (p > max_p){
+            max_p = p;
+            idx = i;
+        }
+    }
+  return possible_labels[idx];
+}
+
 int main() {
   // train classifier
-  cout << "Training Gaussian Naive Bayes classifier"
-  vector< vector<double> > X_train = Load_State("../data/train_states.txt");
-  vector< string > Y_train  = Load_Label("../train_labels.txt");
+  cout << "Training Gaussian Naive Bayes classifier\n";
+  vector<vector<double>> X_train = Load_State("../data/train_states1.txt");
+  vector<string> Y_train = Load_Label("../data/train_labels.txt");
 
-  GNB gnb = GNB();
-  
   vector<vector<double>> mus_c(3, vector<double>(X_train[0].size()));
   vector<vector<double>> sigmas_c(3, vector<double>(X_train[0].size()));
-  gnb.train(X_train, Y_train, mus_c, sigmas_c);
-  
+  Train(X_train, Y_train, mus_c, sigmas_c);
+
   //
   uWS::Hub h;
 
@@ -328,7 +357,7 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&mus_c,&sigmas_c](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -405,6 +434,13 @@ int main() {
 
                 check_car_s = sensor_fusion[i][5]; // how far is this car?
                 check_car_s += ((double)path_size*0.02*check_speed);
+
+                vector<double> coords;
+                coords.push_back(vx);
+                coords.push_back(vy);
+
+                string a = Predict(coords, mus_c, sigmas_c);
+                cout<<a<<endl;
 
                 // https://discussions.udacity.com/t/compute-s-speed-of-sensor-fusion-data/326620/2
                 // car_heading  = arctan(vy/vx)
