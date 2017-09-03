@@ -1,8 +1,38 @@
 # Path Planning
 
-![img](https://media.giphy.com/media/l378eCpHpx7HDRJDO/giphy.gif)
+This repository contains the code for the path planning project.
+
+The code is in `src/main.cpp` and it makes use of [`spline.h`](http://kluge.in-chemnitz.de/opensource/spline/) library. In the following sections, the code is described with reference to `main.cpp` lines.
+
+#### Driving around the track
+
+The car uses Frenet coordinates to drive along the track within a given lane. The lane is initially set to `1` as the car initial position is in the middle lane (line 19). The car moves along the track by following a trajectory computed at each time step. The trajectory is calculated by `generateNewTrajectory()` function (defined at line 172), where three points are interpolated by means of splines. This approach has been taken from the walkthrough video; the resulting trajectory is smooth as this is calculated using two points from the previous trajectory. The computed trajectory seems to minimize the jerk as well: this is thanks to the smoothness of interpolating splines. If a lane different from the current one is passed to the function, a new lane-shifting smooth trajectory is generated.
+
+#### Adapting speed
+
+The car speed is controlled by the variable `target_speed`, which is initially set to zero (line 24). If the road in front of the car is free, the speed is slowly increased to 49.5mph (line 516; this ensures that we do not exceed the 50mph limit).
+
+The function `lookAhead()` makes use of the `sensor_fusion` data to identify cars in front of us (line 279). The function loops all the sensor fusion data until it finds a car in the same lane of us (line 288). If the found car is closer than a threshold depending on our speed (line 303), the `target_speed` is decreased with a parabolic law. This ensures a smooth deceleration when the other car is far, but allows an emergency brake when a car suddenly moves in front of us. Whenever a slow car is found, the `too_close` flag is set to `true` to trigger the lane shift operation.
+
+#### Passing cars
+
+The passing behavior is defined in `checkLanes()` function (line 366). Here, depending on the current lane, the adjacent lanes are checked for other cars. The single lane check is done by `checkLane()` function (line 323). In the candidate lane we check for cars closer than 30m in front of us or 10m behind us, as in these cases it is too dangerous to make the lane shift. If the candidate lane is safe, the `lane` variable is changed accordingly. As a common sense rule, the lane shift towards the left- is preferred to the one towards the right-lane.
+
+Below there are two examples of the car driving autonomously around the track. In the first case, the car changes lane to pass the center lane slower car, then it slows down as all the three lanes are occupied.
 
 ![img](https://media.giphy.com/media/l1J9PYCBxkpWnNtUk/giphy.gif)
+
+In the second case, the car finds space to make the lane shift and accelerates to 50mph.
+
+![img](https://media.giphy.com/media/l378eCpHpx7HDRJDO/giphy.gif)
+
+The car was able to travel around the entire track without collisions or warnings of any kind (see figure below).
+![img](lap_done_proof.png)
+
+#### Limitations
+
+The car drives using a fairly simple finite state machine and makes no use of path search algorithms. An improvement on the actual implementation would consist in using sensor data from all the lanes, build a maze-like environment, and run the A* algorithm to find the best (i.e. speed optimized) path. 
+
 
 ---
 ## Installation instructions
