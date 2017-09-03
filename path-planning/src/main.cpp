@@ -314,7 +314,7 @@ void lookAhead(vector<vector<double> > sensor_fusion, int lane, int path_size,
           deceleration = car_distance*(car_distance/900 - 1/15) + 1;
 
           ref_vel -= 0.1*deceleration;
-          cout << other_car_speed_mph << " " << car_speed << endl;
+          // cout << other_car_speed_mph << " " << car_speed << endl;
         }
       }
     }
@@ -350,7 +350,7 @@ bool checkLane(vector<vector<double> > sensor_fusion, int next_lane, int path_si
         // too dangerous
         return false;
       }
-      else if (car_s > other_car_s && -car_distance < 20)
+      else if (car_s > other_car_s && -car_distance < 10)
       {
         return false;
       }
