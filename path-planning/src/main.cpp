@@ -9,6 +9,8 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+#include <ctime>
+
 
 using namespace std;
 
@@ -17,6 +19,9 @@ using json = nlohmann::json;
 
 // starting lane
 int lane = 1;
+
+bool cool_down = false;
+clock_t cool_down_time_begin = clock();
 
 // target reference velocity in mph
 // initially, to avoid the cold start issue, this is set to 0
@@ -317,30 +322,115 @@ void lookAhead(vector<vector<double> > sensor_fusion, int lane, int path_size,
   }
 }
 
-bool check_lane(vector<vector<double> > sensor_fusion, int lane, double car_s, int path_size)
+bool checkLane(vector<vector<double> > sensor_fusion, int next_lane, int path_size,
+              double car_s, double car_speed)
 {
-  double vx, vy, check_speed, check_car_s, d;
-  bool danger = false;
+  double other_car_d;
   for (int i=0; i<sensor_fusion.size(); i++)
   {
-    d = sensor_fusion[i][6]; // retrieve d
-    if (d < 2 + 4*lane + 2 && d > 2 + 4*lane -2) // a car in that lane
+    other_car_d = sensor_fusion[i][6];
+    // if a car is sensed in a given lane
+    if (other_car_d < 2 + 4*next_lane + 2 && other_car_d > 2 + 4*next_lane - 2)
     {
-      vx = sensor_fusion[i][3]; // retrieve velocity components
-      vy = sensor_fusion[i][4];
-      check_speed = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
+      // compute other car velocity in m/s
+      double vx = sensor_fusion[i][3]; // retrieve velocity components
+      double vy = sensor_fusion[i][4];
+      double other_car_speed = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
+      double other_car_speed_mph = other_car_speed*2.23694; // convert to mph
 
-      check_car_s = sensor_fusion[i][5]; // how far is this car?
-      // check_car_s += ((double)path_size*0.02*check_speed);
+      // check the distance from me
+      double other_car_s = sensor_fusion[i][5];
 
-      if (check_car_s - car_s < 25 and check_car_s > car_s)
+      // compensate latency
+      other_car_s += ((double)path_size*0.02*other_car_speed);
+
+      // if it is too close
+      double car_distance = other_car_s - car_s;
+      if (other_car_s > car_s && car_distance < 30)
       {
-        danger = true;
+        // too dangerous
+        return false;
+      }
+      else if (car_s > other_car_s && other_car_speed_mph < car_speed)
+      {
+        return true;
       }
     }
   }
-  return danger;
+  return true;
 }
+
+void checkLanes(vector<vector<double> > sensor_fusion, int &lane, int path_size,
+              double car_s, double car_speed, bool &cool_down, clock_t &cool_down_time_begin)
+{
+  if (cool_down == false)
+  {
+    bool secure_lane_change;
+    if (lane == 0)
+    {
+      secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
+      if (secure_lane_change)
+      {
+        lane += 1;
+        cool_down = true;
+        cool_down_time_begin = clock();
+      }
+    }
+    else if (lane == 1)
+    {
+      secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
+      if (secure_lane_change)
+      {
+        lane -= 1;
+        cool_down = true;
+        cool_down_time_begin = clock();
+      }
+      secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
+      if (secure_lane_change)
+      {
+        lane += 1;
+        cool_down = true;
+        cool_down_time_begin = clock();
+      }
+    }
+    else if (lane == 2)
+    {
+      secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
+      if (secure_lane_change)
+      {
+        lane -= 1;
+        cool_down = true;
+        cool_down_time_begin = clock();
+      }
+    }
+  }
+}
+
+//
+// bool check_lane(vector<vector<double> > sensor_fusion, int lane, double car_s, int path_size)
+// {
+//   double vx, vy, check_speed, check_car_s, d;
+//   bool danger = false;
+//   for (int i=0; i<sensor_fusion.size(); i++)
+//   {
+//     d = sensor_fusion[i][6]; // retrieve d
+//     if (d < 2 + 4*lane + 2 && d > 2 + 4*lane -2) // a car in that lane
+//     {
+//       vx = sensor_fusion[i][3]; // retrieve velocity components
+//       vy = sensor_fusion[i][4];
+//       check_speed = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
+//
+//       check_car_s = sensor_fusion[i][5]; // how far is this car?
+//       // check_car_s += ((double)path_size*0.02*check_speed);
+//
+//       if (check_car_s - car_s < 25 and check_car_s > car_s)
+//       {
+//         danger = true;
+//       }
+//     }
+//   }
+//   return danger;
+// }
 
 int main() {
 
@@ -433,101 +523,28 @@ int main() {
 
             // SENSOR FUSION
             bool too_close = false;
+
+            // use sensor fusion info to detect another car in the same lane
             lookAhead(sensor_fusion, lane, path_size, car_s, too_close, car_speed, ref_vel);
+
+            // if a slower car is in front of us, check if other lanes are free
+            clock_t check_time = clock();
+            if (check_time - cool_down_time_begin > 5)
+            {
+              cool_down = false;
+            }
+            if (too_close and cool_down == false)
+            {
+              checkLanes(sensor_fusion, lane, path_size, car_s, car_speed, cool_down, cool_down_time_begin);
+            }
+
 
             if (too_close == false && ref_vel < 49.75)
             {
               ref_vel += 0.224;
             }
 
-
-
-            // bool too_close = false;
-            //
-            // float d; // other car d, s, and velocity
-            // double vx, vy, check_speed, check_car_s;
-            // double x0, y0, x1, y1, d0, s1, d1, vs, vd;
-            // for (int i=0; i<sensor_fusion.size(); i++)
-            // {
-            //   d = sensor_fusion[i][6]; // retrieve d
-            //   if (d < 2 + 4*lane + 2 && d > 2 + 4*lane -2) // another car in my lane
-            //   {
-            //     vx = sensor_fusion[i][3]; // retrieve velocity components
-            //     vy = sensor_fusion[i][4];
-            //     check_speed = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
-            //
-            //     check_car_s = sensor_fusion[i][5]; // how far is this car?
-            //     check_car_s += ((double)path_size*0.02*check_speed);
-            //
-            //     // if the car ahead is too close (less than 30 meters)
-            //     if (check_car_s > car_s && check_car_s - car_s < 15)
-            //     {
-            //       ref_vel -= 0.224;
-            //     }
-            //     else if (check_car_s > car_s && check_car_s - car_s < 30)
-            //     {
-            //       too_close = true; // change proximity flag
-            //
-            //       if (lane == 0)
-            //       {
-            //         bool right = check_lane(sensor_fusion, lane+1, car_s, path_size);
-            //         if (right == false)
-            //         {
-            //           // ref_vel += 0.224;
-            //           lane += 1;
-            //         }
-            //         else if (ref_vel > check_speed)
-            //         {
-            //           ref_vel -= 0.06;
-            //         }
-            //       }
-            //       else if (lane == 1)
-            //       {
-            //         bool left = check_lane(sensor_fusion, lane-1, car_s, path_size);
-            //         bool right = check_lane(sensor_fusion, lane+1, car_s, path_size);
-            //         if (left == false)
-            //         {
-            //           // ref_vel += 0.224;
-            //           lane -= 1;
-            //         }
-            //         else if (right == false)
-            //         {
-            //           // ref_vel += 0.224;
-            //           lane += 1;
-            //         }
-            //         else if (ref_vel > check_speed)
-            //         {
-            //           ref_vel -= 0.06;
-            //         }
-            //       }
-            //       else
-            //       {
-            //         bool left = check_lane(sensor_fusion, lane-1, car_s, path_size);
-            //         if (left == false)
-            //         {
-            //           // ref_vel += 0.224;
-            //           lane -= 1;
-            //         }
-            //         else if (ref_vel > check_speed)
-            //         {
-            //           ref_vel -= 0.06;
-            //         }
-            //       }
-            //     }
-            //   }
-            // }
-            //
-            //
-            // // decrease or increase velocity depending on reference velocity and proximity flag
-            // if (too_close)
-            // {
-            //   ref_vel -= 0.06; // 5 m/s^2
-            // }
-            // else if (ref_vel<49.5)
-            // {
-            //   ref_vel += 0.224;
-            // }
-
+            // CONTROL
             generateNewTrajectory(car_x, car_y, car_yaw, previous_path_x,
                           previous_path_y, map_waypoints_s,
                           map_waypoints_x, map_waypoints_y,
