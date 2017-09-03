@@ -9,8 +9,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
-#include <ctime>
-
+// #include <ctime>
 
 using namespace std;
 
@@ -20,8 +19,8 @@ using json = nlohmann::json;
 // starting lane
 int lane = 1;
 
-bool cool_down = false;
-clock_t cool_down_time_begin = clock();
+// bool cool_down = false;
+// clock_t cool_down_time_begin = clock();
 
 // target reference velocity in mph
 // initially, to avoid the cold start issue, this is set to 0
@@ -302,7 +301,7 @@ void lookAhead(vector<vector<double> > sensor_fusion, int lane, int path_size,
 
       // if it is too close
       double car_distance = other_car_s - car_s;
-      if (other_car_s > car_s && car_distance < 30)
+      if (other_car_s > car_s && car_distance < (30.0 * ref_vel / 49.5))
       {
         // danger
         too_close = true;
@@ -346,14 +345,14 @@ bool checkLane(vector<vector<double> > sensor_fusion, int next_lane, int path_si
 
       // if it is too close
       double car_distance = other_car_s - car_s;
-      if (other_car_s > car_s && car_distance < 30)
+      if (other_car_s > car_s && car_distance < 30.0 * ref_vel / 49.5)
       {
         // too dangerous
         return false;
       }
-      else if (car_s > other_car_s && other_car_speed_mph < car_speed)
+      else if (car_s > other_car_s && -car_distance < 20)
       {
-        return true;
+        return false;
       }
     }
   }
@@ -361,47 +360,44 @@ bool checkLane(vector<vector<double> > sensor_fusion, int next_lane, int path_si
 }
 
 void checkLanes(vector<vector<double> > sensor_fusion, int &lane, int path_size,
-              double car_s, double car_speed, bool &cool_down, clock_t &cool_down_time_begin)
+              double car_s, double car_speed)//, bool &cool_down, clock_t &cool_down_time_begin)
 {
-  if (cool_down == false)
+  bool secure_lane_change;
+  if (lane == 0)
   {
-    bool secure_lane_change;
-    if (lane == 0)
+    secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
+    if (secure_lane_change)
     {
-      secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
-      if (secure_lane_change)
-      {
-        lane += 1;
-        cool_down = true;
-        cool_down_time_begin = clock();
-      }
+      lane += 1;
+      // cool_down = true;
+      // cool_down_time_begin = clock();
     }
-    else if (lane == 1)
+  }
+  else if (lane == 1)
+  {
+    secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
+    if (secure_lane_change)
     {
-      secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
-      if (secure_lane_change)
-      {
-        lane -= 1;
-        cool_down = true;
-        cool_down_time_begin = clock();
-      }
-      secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
-      if (secure_lane_change)
-      {
-        lane += 1;
-        cool_down = true;
-        cool_down_time_begin = clock();
-      }
+      lane -= 1;
+      // cool_down = true;
+      // cool_down_time_begin = clock();
     }
-    else if (lane == 2)
+    secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
+    if (secure_lane_change)
     {
-      secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
-      if (secure_lane_change)
-      {
-        lane -= 1;
-        cool_down = true;
-        cool_down_time_begin = clock();
-      }
+      lane += 1;
+      // cool_down = true;
+      // cool_down_time_begin = clock();
+    }
+  }
+  else if (lane == 2)
+  {
+    secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
+    if (secure_lane_change)
+    {
+      lane -= 1;
+      // cool_down = true;
+      // cool_down_time_begin = clock();
     }
   }
 }
@@ -528,14 +524,14 @@ int main() {
             lookAhead(sensor_fusion, lane, path_size, car_s, too_close, car_speed, ref_vel);
 
             // if a slower car is in front of us, check if other lanes are free
-            clock_t check_time = clock();
-            if (check_time - cool_down_time_begin > 5)
+            // clock_t check_time = clock();
+            // if (check_time - cool_down_time_begin > 5)
+            // {
+            //   cool_down = false;
+            // }
+            if (too_close)// and cool_down == false)
             {
-              cool_down = false;
-            }
-            if (too_close and cool_down == false)
-            {
-              checkLanes(sensor_fusion, lane, path_size, car_s, car_speed, cool_down, cool_down_time_begin);
+              checkLanes(sensor_fusion, lane, path_size, car_s, car_speed);//, cool_down, cool_down_time_begin);
             }
 
 
