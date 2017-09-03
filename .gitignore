@@ -4,3 +4,4 @@ vehicle-detection/vehicles/*
 vehicle-detection/non-vehicles/*
 vehicle-detection/writeup_template.md
 **/build/*
+path-planning/.DS_Store
