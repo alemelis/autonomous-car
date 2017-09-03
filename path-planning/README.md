@@ -20,18 +20,18 @@ The passing behavior is defined in `checkLanes()` function (line 366). Here, dep
 
 Below there are two examples of the car driving autonomously around the track. In the first case, the car changes lane to pass the center lane slower car, then it slows down as all the three lanes are occupied.
 
-![img](https://media.giphy.com/media/l1J9PYCBxkpWnNtUk/giphy.gif)
+![img](gifs/a.gif)
 
 In the second case, the car finds space to make the lane shift and accelerates to 50mph.
 
-![img](https://media.giphy.com/media/l378eCpHpx7HDRJDO/giphy.gif)
+![img](gifs/b.gif)
 
 The car was able to travel around the entire track without collisions or warnings of any kind (see figure below).
 ![img](lap_done_proof.png)
 
 #### Limitations
 
-The car drives using a fairly simple finite state machine and makes no use of path search algorithms. An improvement on the actual implementation would consist in using sensor data from all the lanes, build a maze-like environment, and run the A* algorithm to find the best (i.e. speed optimized) path. 
+The car drives using a fairly simple finite state machine and makes no use of path search algorithms. An improvement on the actual implementation would consist in using sensor data from all the lanes, build a maze-like environment, and run the A* algorithm to find the best (i.e. speed optimized) path.
 
 
 ---
