@@ -9,7 +9,6 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
-// #include <ctime>
 
 using namespace std;
 
@@ -19,13 +18,10 @@ using json = nlohmann::json;
 // starting lane
 int lane = 1;
 
-// bool cool_down = false;
-// clock_t cool_down_time_begin = clock();
-
 // target reference velocity in mph
 // initially, to avoid the cold start issue, this is set to 0
 // an acceleration of 5m/s^2 is applied within the sensor fusion code section
-double ref_vel = 49.5;
+double target_speed = 0.;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -257,7 +253,7 @@ void generateNewTrajectory(double car_x, double car_y, double car_yaw, vector<do
   double N, x_point, y_point, x_ref, y_ref;
   for (int i=1; i<=50-path_size; i++)
   {
-    N = target_distance/(.02*ref_vel/2.24);
+    N = target_distance/(.02*target_speed/2.24);
     x_point = x_add_on+target_x/N;
     y_point = s(x_point);
 
@@ -278,8 +274,10 @@ void generateNewTrajectory(double car_x, double car_y, double car_yaw, vector<do
   }
 }
 
+// check the road in front of ego car for other vehicles in the current lane
 void lookAhead(vector<vector<double> > sensor_fusion, int lane, int path_size,
-              double car_s, bool &too_close, double car_speed, double &ref_vel)
+              double car_s, bool &too_close, double car_speed,
+              double &target_speed)
 {
   double other_car_d;
   for (int i=0; i<sensor_fusion.size(); i++)
@@ -299,36 +297,37 @@ void lookAhead(vector<vector<double> > sensor_fusion, int lane, int path_size,
       // compensate latency
       other_car_s += ((double)path_size*0.02*other_car_speed);
 
-      // if it is too close
+      // if it is too close depending on the current speed
       double car_distance = other_car_s - car_s;
-      if (other_car_s > car_s && car_distance < (30.0 * ref_vel / 49.5))
+      if (other_car_s > car_s && car_distance < (30.0 * target_speed / 49.5))
       {
         // danger
         too_close = true;
 
-        // decrease velocity if it is slower than me
+        // decrease velocity if the other car is slower than me
         double other_car_speed_mph = other_car_speed*2.23694; // convert to mph
         if (other_car_speed_mph < car_speed - 0.112)
         {
           double deceleration; // parabolic deceleration
           deceleration = car_distance*(car_distance/900 - 1/15) + 1;
 
-          ref_vel -= 0.1*deceleration;
-          // cout << other_car_speed_mph << " " << car_speed << endl;
+          target_speed -= 0.1*deceleration;
         }
       }
     }
   }
 }
 
-bool checkLane(vector<vector<double> > sensor_fusion, int next_lane, int path_size,
-              double car_s, double car_speed)
+// check if it safe to change lane
+bool checkLane(vector<vector<double> > sensor_fusion, int next_lane,
+              int path_size, double car_s, double car_speed)
 {
   double other_car_d;
   for (int i=0; i<sensor_fusion.size(); i++)
   {
     other_car_d = sensor_fusion[i][6];
-    // if a car is sensed in a given lane
+
+    // if a car is sensed in the possible next lane
     if (other_car_d < 2 + 4*next_lane + 2 && other_car_d > 2 + 4*next_lane - 2)
     {
       // compute other car velocity in m/s
@@ -340,93 +339,69 @@ bool checkLane(vector<vector<double> > sensor_fusion, int next_lane, int path_si
       // check the distance from me
       double other_car_s = sensor_fusion[i][5];
 
-      // compensate latency
+      // compensate for latency
       other_car_s += ((double)path_size*0.02*other_car_speed);
 
       // if it is too close
       double car_distance = other_car_s - car_s;
-      if (other_car_s > car_s && car_distance < 30.0 * ref_vel / 49.5)
+      if (other_car_s > car_s && car_distance < 30.0 * target_speed / 49.5)
       {
-        // too dangerous
+        // the turn is too dangerous because the car is too close
         return false;
       }
       else if (car_s > other_car_s && -car_distance < 10)
       {
+        // the turn is dangerous because we haven't fully passed the car in the other lane
         return false;
       }
     }
   }
+
   return true;
+
 }
 
+// check all the available lanes depending on the current lane
 void checkLanes(vector<vector<double> > sensor_fusion, int &lane, int path_size,
-              double car_s, double car_speed)//, bool &cool_down, clock_t &cool_down_time_begin)
+              double car_s, double car_speed)
 {
   bool secure_lane_change;
-  if (lane == 0)
+  if (lane == 0) // we are in the left lane and we want to go to the center lane
   {
-    secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
+    secure_lane_change = checkLane(sensor_fusion, lane+1, path_size,
+                                   car_s, car_speed);
     if (secure_lane_change)
     {
-      lane += 1;
-      // cool_down = true;
-      // cool_down_time_begin = clock();
+      lane += 1; // safe to change lane
     }
   }
-  else if (lane == 1)
+  else if (lane == 1) // we are in the center lane
   {
-    secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
+    secure_lane_change = checkLane(sensor_fusion, lane-1, path_size,
+                                   car_s, car_speed);
+    // we'd like to go in the left lane (better to pass on the left)
     if (secure_lane_change)
     {
       lane -= 1;
-      // cool_down = true;
-      // cool_down_time_begin = clock();
     }
-    secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s, car_speed);
+    secure_lane_change = checkLane(sensor_fusion, lane+1, path_size, car_s,
+                                   car_speed);
+    // left lane is occupied, let's try with the right one
     if (secure_lane_change)
     {
       lane += 1;
-      // cool_down = true;
-      // cool_down_time_begin = clock();
     }
   }
-  else if (lane == 2)
+  else if (lane == 2) // we are in the right lane
   {
-    secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s, car_speed);
-    if (secure_lane_change)
+    secure_lane_change = checkLane(sensor_fusion, lane-1, path_size, car_s,
+                                   car_speed);
+    if (secure_lane_change) // let's check the center lane
     {
       lane -= 1;
-      // cool_down = true;
-      // cool_down_time_begin = clock();
     }
   }
 }
-
-//
-// bool check_lane(vector<vector<double> > sensor_fusion, int lane, double car_s, int path_size)
-// {
-//   double vx, vy, check_speed, check_car_s, d;
-//   bool danger = false;
-//   for (int i=0; i<sensor_fusion.size(); i++)
-//   {
-//     d = sensor_fusion[i][6]; // retrieve d
-//     if (d < 2 + 4*lane + 2 && d > 2 + 4*lane -2) // a car in that lane
-//     {
-//       vx = sensor_fusion[i][3]; // retrieve velocity components
-//       vy = sensor_fusion[i][4];
-//       check_speed = sqrt(pow(vx, 2)+pow(vy, 2)); // v magnitude
-//
-//       check_car_s = sensor_fusion[i][5]; // how far is this car?
-//       // check_car_s += ((double)path_size*0.02*check_speed);
-//
-//       if (check_car_s - car_s < 25 and check_car_s > car_s)
-//       {
-//         danger = true;
-//       }
-//     }
-//   }
-//   return danger;
-// }
 
 int main() {
 
@@ -467,8 +442,9 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-                     uWS::OpCode opCode) {
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+            &map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws,
+              char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -512,6 +488,8 @@ int main() {
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
 
             int path_size = previous_path_x.size();
+
+            // fix end path issue
             if (path_size>0)
             {
               car_s = end_path_s;
@@ -521,32 +499,29 @@ int main() {
             bool too_close = false;
 
             // use sensor fusion info to detect another car in the same lane
-            lookAhead(sensor_fusion, lane, path_size, car_s, too_close, car_speed, ref_vel);
+            lookAhead(sensor_fusion, lane, path_size, car_s, too_close,
+                      car_speed, target_speed);
 
             // if a slower car is in front of us, check if other lanes are free
-            // clock_t check_time = clock();
-            // if (check_time - cool_down_time_begin > 5)
-            // {
-            //   cool_down = false;
-            // }
-            if (too_close)// and cool_down == false)
+            if (too_close)
             {
-              checkLanes(sensor_fusion, lane, path_size, car_s, car_speed);//, cool_down, cool_down_time_begin);
-            }
-
-
-            if (too_close == false && ref_vel < 49.75)
-            {
-              ref_vel += 0.224;
+              checkLanes(sensor_fusion, lane, path_size, car_s, car_speed);
             }
 
             // CONTROL
+            // if the road ahead is free, increase speed up to about 50mph
+            if (too_close == false && target_speed < 49.5)
+            {
+              target_speed += 0.224; // ~5 m/s^2
+            }
+
+            // generate new trajectory with spline interpolation
             generateNewTrajectory(car_x, car_y, car_yaw, previous_path_x,
                           previous_path_y, map_waypoints_s,
                           map_waypoints_x, map_waypoints_y,
                           lane, car_s, next_x_vals, next_y_vals);
 
-            //---------------------------------------------------------------------
+            //------------------------------------------------------------------
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
