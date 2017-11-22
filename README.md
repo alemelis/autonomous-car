@@ -3,6 +3,8 @@
 
 This repositories contains the code developed for the CarND.
 
+![img](./behavioral-cloning/gifs/bc5.gif)![img](./path-planning/gifs/b.gif)
+
 ### Install
 1. [Miniconda](https://conda.io/miniconda.html)
 2. [Conda environment](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/doc/configure_via_anaconda.md)
@@ -30,4 +32,4 @@ and follow the instruction in each `README`.
 * Third term: path planning, concentration, and systems
   1. [Path planning](https://github.com/alemelis/autonomous-car/tree/master/path-planning) (localisation and control)
   2. [Semantic segmentation](https://github.com/alemelis/autonomous-car/tree/master/semantic-segmentation) (deep learning)
-  3. [System integration](https://github.com/KojiShiono/Stanley2.0)
+  3. [System integration](https://github.com/KojiShiono/Stanley2.0) (all together)
